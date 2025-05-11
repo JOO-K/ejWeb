@@ -1,0 +1,114 @@
+@font-face {
+  font-family: GraphikBold;
+  src: url(../fonts/Graphik-Bold.otf);
+}
+
+@font-face {
+  font-family: Graphik;
+  src: url(../fonts/Graphik.otf);
+}
+
+@font-face {
+  font-family: Bookish;
+  src: url(../fonts/Bookish.otf);
+}
+
+@font-face {
+  font-family: ReplicaMono;
+  src: url(../fonts/ReplicaMonoLL-Regular.otf);
+}
+
+@font-face {
+  font-family: ReplicaBold;
+  src: url(../fonts/ReplicaLL-Bold.otf);
+}
+
+@font-face {
+  font-family: ReplicaReg;
+  src: url(../fonts/ReplicaLL-Regular.otf);
+}
+
+@font-face {
+  font-family: ReplicaLight;
+  src: url(../fonts/ReplicaLL-Light.otf);
+}
+
+.space-mono-regular {
+  font-family: "Space Mono", monospace;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.space-mono-bold {
+  font-family: "Space Mono", monospace;
+  font-weight: 700;
+  font-style: normal;
+}
+
+.space-mono-regular-italic {
+  font-family: "Space Mono", monospace;
+  font-weight: 400;
+  font-style: italic;
+}
+
+.space-mono-bold-italic {
+  font-family: "Space Mono", monospace;
+  font-weight: 700;
+  font-style: italic;
+}
+
+
+.replica-amp {
+
+  font-family: "ReplicaReg";
+
+  font-variation-settings: "ss09" ss09; /* "ss01" is the OpenType feature name, 2 is the variation number  */
+
+}
+
+@media all and (max-width: 800px) {
+  .mobile-hp-container {
+    display: flex;
+    flex-direction: row;
+  }
+}
+
+.nanum-myeongjo-regular {
+  font-family: "Nanum Myeongjo", serif;
+  font-weight: 800;
+  font-style: normal;
+}
+
+.dongle-regular {
+  font-family: "Dongle", serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+/* Hide scrollbar for Chrome, Safari, and Edge */
+::-webkit-scrollbar {
+    display: none;
+}
+
+/* Hide scrollbar for Firefox */
+html {
+    scrollbar-width: none;
+}
+
+/* Hide scrollbar for Internet Explorer */
+body {
+    -ms-overflow-style: none;
+}
+
+body {
+  
+  padding: 0;
+  margin: 0;
+
+  background-color: #f0f0f0;
+}
+
+.wrapper {
+}
+
+

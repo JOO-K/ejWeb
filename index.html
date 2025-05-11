@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>ericjoo - work</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+
+  <link type="text/css" rel="stylesheet" href="./css/style.css">
+  <link type="text/css" rel="stylesheet" href="./css/navigation.css">
+  <link type="text/css" rel="stylesheet" href="./css/cube.css">
+  <link type="text/css" rel="stylesheet" href="./css/workarchive.css">
+  <link type="text/css" rel="stylesheet" href="./css/projects.css">
+
+  <link rel="icon" type="image/png" href="">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap"
+    rel="stylesheet">
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.4.1/dist/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.11.0/lib/p5.min.js"></script>
+
+  <script src="https://unpkg.com/typewriter-effect@latest/dist/core.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+  <div class="" id="navigation"></div>
+
+  <div class="" id="workarchive"></div>
+
+  <div class="" id="exampleproj" ></div>
+
+  <div class="" id="exampleproj2" ></div>
+
+  <div class="" id="exampleproj3" ></div>
+
+
+  
+
+
+  <div class="wrapper">
+
+    <!-- <div class="" id="desktopNav-Placeholder"></div> -->
+
+  </div>
+
+
+  <!-- JAVASCRIPT PRELOADS & EXAMPLES -->
+
+
+  <script src="https://unpkg.com/react@16/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+  <script type="text/javascript" src="./js/partLoader.js"></script>
+  <script type="text/javascript" src="./js/menu.js"></script>
+
+
+
+  <span>
+
+
+
+    <!-- tilt.js -->
+    <script type="text/javascript" src="./js/vanilla-tilt.js"></script>
+    <script type="text/javascript">
+
+      var card = document.querySelectorAll(".card")
+      for (var i = 0; i < card.length; i++) {
+        card[i].setAttribute("data-tilt", "");
+        card[i].setAttribute("data-tilt-reset", "false");
+      }
+
+      VanillaTilt.init(card, {
+        reverse: true,
+        max: 30,
+        startX: -0,
+        startY: -0,
+        speed: 5000,
+
+        scale: 1.010,
+        transition: true,
+        gyroscope: true,
+        gyroscopeMaxAngleX: 20,
+        gyroscopeMinAngleX: -20
+      });
+    </script>
+
+
+
+    <script>
+
+      // Reset VanillaTilt
+
+      timeOut = 500; // delay in milliseconds
+
+      $(".container").mouseleave(function () {
+        setTimeout(function () {
+          var card = document.querySelectorAll(".card")
+          for (var i = 0; i < card.length; i++) {
+            card[i].vanillaTilt.destroy();
+          }
+          VanillaTilt.init(card, {
+            reverse: true,
+            max: 30,
+            startX: 0,
+            startY: 0,
+            speed: 5000,
+            scale: 1.010,
+            transition: true,
+            gyroscope: true,
+            gyroscopeMaxAngleX: 20,
+            gyroscopeMinAngleX: -20
+          });
+        }, timeOut);
+      })
+
+    </script>
+
+    <!--  Typewriter.js  -->
+    <script>
+      var app = document.getElementById('typewriter');
+
+      var typewriter = new Typewriter(app, {
+        loop: true,
+        delay: 75,
+      });
+
+      typewriter
+        .typeString('안녕 Welcome to // Graphics Portfolio of 경현 Eric Joo')
+        .pauseFor(50000)
+        .deleteChars(20)
+        .typeString('GRAPHIX WORKS ARCHIVE')
+        .start();
+    </script>
+
+    
+
+  </span>
+
+
+
+
+</body>
+
+</html>
