@@ -2,9 +2,10 @@
     margin: 0px;
     width: 100vw;
     height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: block;
+    /* align-items: center;
+    justify-content: center; */
+    background-color: #e0e0e0;
     overflow: hidden;
   }
 
@@ -13,12 +14,124 @@
     width: 100%;
     height: 100%;
   }
-  
+
+#carouselCanvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+    width: 100%;
+    height: 100%;
+cursor: pointer !important; /* Set cursor to pointer */
+}
+.card-info {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 200px;
+    transform: translate(-53%, -38%);
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(8px); 
+    -webkit-backdrop-filter: blur(8px); 
+    color: white;
+    margin: 10px;
+    text-align: center;
+    z-index: 10;
+    font-family: ReplicaReg;
+    font-size: 14px;
+    line-height: 18px;
+    color: black;
+    border-radius: 5px 30px 5px 5px;
+    box-sizing: border-box;
+}
+#infoImage {
+    max-width: 200px;
+    max-height: 200px;
+}
+
+#infoImage{
+    border-radius: 5px 30px 5px 5px;
+}
+
+dialog {
+    width: 100px;
+    text-align: center;
+    color: white;
+    background-color: #000;
+    border: none;
+    position: relative;
+}
+
+#progress-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent; /* Ensure the container itself doesn’t block the canvas */
+    z-index: 100; /* Above the canvas */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: ReplicaReg;
+
+}
+
+#progress-container p{
+      color: black;
+}
+
+#progress-dialog {
+    background-color: #e0e0e0; /* Light gray background (change to your desired color) */
+    padding: 20px;
+}
+
+dialog[open] {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #f0f0f0; /* Ensure dialog inherits the same color */
+}
+
+/* Optional: Style the progress bar */
+#progress-indicator {
+    width: 100px; /* Adjust width as needed */
+    height: 20px;
+    border-radius: 5px;
+}
+
+/* Ensure the canvas is below the progress dialog */
+#carouselCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1; /* Below progress dialog */
+}
+
+progress {
+    width: 100%;
+    height: 1em;
+    border: none;
+    background-color: #fff;
+    border-radius: 5px;
+}
+
+progress::-webkit-progress-bar {
+    background-color: #333;
+}
+
+progress::-webkit-progress-value {
+    background-color: #eee;
+}
+
+progress::-moz-progress-bar {
+    background-color: #eee;
+}
+
   .cube {
     transform-style: preserve-3d;
     transform: rotate3d(-.2, 1, -.095, 45deg) 
-    translateX(-225px) 
-    translateY(-120px) 
+    translateX(50vw) 
+    translateY(5vh) 
     perspective(none);
     transition: .2s;
     animation: cubeload 1s;
@@ -28,6 +141,7 @@
     -khtml-user-select: none;
     -webkit-user-select: none;
     -o-user-select: none;
+
   }
   
   @keyframes cubeload {
@@ -46,7 +160,7 @@
   
   .sideface {
     width: 50px;
-    height: 250px;
+    height: 200px;
     background: black;
     border: .1px solid rgba(0, 0, 0, .9);
     position: absolute;
@@ -59,16 +173,10 @@
     color: white;
     transition: .25s;
   }
-  
-  .sideface img {
-    object-fit: cover;
-    width: 100%;
-    height: 100%;
-    mix-blend-mode: screen;
-  }
+
   
   .topface {
-    width: 500px;
+    width: 200px;
     height: 50px;
     background: black;
     border: .1px solid rgba(0, 0, 0, .9);
@@ -84,8 +192,82 @@
   }
   
   .frontface {
-    width: 500px;
-    height: 250px;
+    width: 200px;
+    height: 200px;
+    background: black;
+    border: .1px solid rgba(0, 0, 0, .9);
+    position: absolute;
+    opacity: 1;
+    transition: .25s;
+  }
+
+  .sm-cube {
+    transform-style: preserve-3d;
+    transform: rotate3d(-.2, 1, -.095, 45deg) 
+    translateX(-100px) 
+    translateY(-100px) 
+    perspective(none);
+    transition: .2s;
+    animation: cubeload 1s;
+    z-index: 10;
+    user-select: none;
+    -moz-user-select: none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    -o-user-select: none;
+    box-sizing: border-box;
+  }
+  
+  @keyframes cubeload {
+  
+    0% {
+      transform: rotate3d(-.2, 1, -.095, 45deg) 
+      translateX(-100px) translateZ(-00px) perspective(none);
+      margin-left: 10px;
+    }
+  
+    100% {
+      margin-left: 0px;
+    }
+  
+  }
+  
+  .sm-sideface {
+    width: 50px;
+    height: 100px;
+    background: black;
+    border: .1px solid rgba(0, 0, 0, .9);
+    position: absolute;
+    opacity: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: Arial, sans-serif;
+    font-size: 1rem;
+    color: white;
+    transition: .25s;
+  }
+
+  
+  .sm-topface {
+    width: 100px;
+    height: 50px;
+    background: black;
+    border: .1px solid rgba(0, 0, 0, .9);
+    position: absolute;
+    opacity: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: Arial, sans-serif;
+    font-size: 1rem;
+    color: white;
+    transition: .25s;
+  }
+  
+  .sm-frontface {
+    width: 100px;
+    height: 100px;
     background: black;
     border: .1px solid rgba(0, 0, 0, .9);
     position: absolute;
@@ -93,12 +275,7 @@
     transition: .25s;
   }
   
-  .frontface img {
-    object-fit: cover;
-    width: 100%;
-    height: 100%;
-    mix-blend-mode: screen;
-  }
+ 
   
   .front {
     transform: translateZ(25px);
@@ -131,237 +308,16 @@
     }
   
   }
+
+ .cube:hover img{
   
-  .cube2 {
-    transform-style: preserve-3d;
-    transform: rotate3d(-.2, 1, -.095, 45deg) 
-    translateX(225px) 
-    translateY(-133px) 
-    perspective(none);
-    transition: .2s;
-    animation: cubeload2 1s;
-    z-index: 8;
-    transition: 2s;
-  }
-  
-  .cube2:hover{
-    transform: translateY(50px);
-  }
-  
-  @keyframes cubeload2 {
-  
-    0% {
-      transform: rotate3d(-.2, 1, -.095, 45deg) 
-      translateX(125vw) perspective(none);
-      margin-left: 10px;
-    }
-  
-    100% {
-      margin-left: 0px;
-    }
-  
-  }
-  
-  .sideface2 {
-    width: 50px;
-    height: 250px;
-    background: black;
-    border: .1px solid rgba(0, 0, 0, .9);
-    position: absolute;
-    opacity: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: Arial, sans-serif;
-    font-size: 1rem;
-    color: white;
-    transition: .25s;
-  }
-  
-  .topface2 {
-    width: 150px;
-    height: 50px;
-    background: black;
-    border: .1px solid rgba(0, 0, 0, .9);
-    position: absolute;
-    opacity: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: Arial, sans-serif;
-    font-size: 1rem;
-    color: white;
-    transition: .25s;
-  }
-  
-  .frontface2 {
-    width: 150px;
-    height: 250px;
-    background: black;
-    border: .1px solid rgba(0, 0, 0, .9);
-    position: absolute;
-    opacity: 1;
-    transition: .25s;
-  }
-  
-  .frontface2 img {
-    object-fit: cover;
-    width: 100%;
-    height: 100%;
-    mix-blend-mode: screen;
-  }
-  
-  .cube3 {
-    transform-style: preserve-3d;
-    transform: rotate3d(-.2, 1, -.095, 45deg) 
-    translateX(-424px) 
-    translateY(-132px) 
-    perspective(none);
-    transition: .2s;
-    animation: cubeload2 1s;
-    z-index: 8;
-  }
-  
-  .sideface3 {
-    width: 50px;
-    height: 250px;
-    background: black;
-    border: .1px solid rgba(0, 0, 0, .9);
-    position: absolute;
-    opacity: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: Arial, sans-serif;
-    font-size: 1rem;
-    color: white;
-    transition: .25s;
-  }
-  
-  .topface3 {
-    width: 150px;
-    height: 50px;
-    background: black;
-    border: .1px solid rgba(0, 0, 0, .9);
-    position: absolute;
-    opacity: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: Arial, sans-serif;
-    font-size: 1rem;
-    color: white;
-    transition: .25s;
-  }
-  
-  .frontface3 {
-    width: 150px;
-    height: 250px;
-    background: black;
-    border: .1px solid rgba(0, 0, 0, .9);
-    position: absolute;
-    opacity: 1;
-    transition: .25s;
-  }
-  
-  .frontface3 img {
-    object-fit: cover;
-    width: 100%;
-    height: 100%;
-    mix-blend-mode: screen;
-  }
-  
-  .cube4 {
-    transform-style: preserve-3d;
-    transform: rotate3d(-.2, 1, -.095, 45deg) 
-    translateX(-260px) 
-    translateY(-210px) 
-    perspective(none);
-    transition: .2s;
-    animation: cubeload2 1s;
-    z-index: 8;
-  }
-  
-  .frontface4 {
-    width: 400px;
-    height: 50px;
-    background: black;
-    border: .1px solid rgba(0, 0, 0, .9);
-    position: absolute;
-    opacity: 1;
-    transition: .25s;
-  }
-  
-  .frontface4 img {
-    object-fit: cover;
-    width: 100%;
-    height: 100%;
-    mix-blend-mode: screen;
-  }
-  
-  .cube5 {
-    transform-style: preserve-3d;
-    transform: rotate3d(-.2, 1, -.095, 45deg) 
-    translateX(-100px) 
-    translateY(-108px) 
-    perspective(none);
-    transition: .2s;
-    animation: cubeload2 1s;
-    z-index: 11;
-  }
-  
-  .sideface5 {
-    width: 50px;
-    height: 250px;
-    background: black;
-    border: .1px solid rgba(0, 0, 0, .9);
-    position: absolute;
-    opacity: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: Arial, sans-serif;
-    font-size: 1rem;
-    color: white;
-    transition: .25s;
-  }
-  
-  .sideface5 img {
-    object-fit: cover;
-    width: 100%;
-    height: 100%;
-    mix-blend-mode: screen;
-  }
-  
-  .topface5 {
-    width: 50px;
-    height: 50px;
-    background: black;
-    border: .1px solid rgba(0, 0, 0, .9);
-    position: absolute;
-    opacity: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: Arial, sans-serif;
-    font-size: 1rem;
-    color: white;
-    transition: .25s;
-  }
-  
-  .frontface5 {
-    width: 50px;
-    height: 250px;
-    background: black;
-    border: .1px solid rgba(0, 0, 0, .9);
-    position: absolute;
-    opacity: 1;
-    transition: .25s;
-  }
-  
-  .frontface5 img {
-    object-fit: cover;
-    width: 100%;
-    height: 100%;
-    mix-blend-mode: screen;
-  }
+  filter: blur(3px);
+  cursor: pointer;
+
+ }
+
+
+ .sm-cube:hover img{
+  filter: blur(3px);
+  cursor: pointer;
+ }

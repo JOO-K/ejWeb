@@ -15,7 +15,7 @@
     backdrop-filter: blur(8px); 
     -webkit-backdrop-filter: blur(8px); 
 
-    z-index: 100000;
+    z-index: 1000000;
 }
 
 .logo-container{
@@ -93,7 +93,7 @@
     position: absolute;
     left: 30px;
     top: 63px;
-    z-index: 1;
+    z-index: 1000000;
 }
 
 .update-container h1{
@@ -125,22 +125,32 @@
 }
 
 .marq-container{
-    width: 513px;
+    position: fixed;
+    top: 91px;
+    left: 30px;
+    width: 484px;
     overflow: hidden;
     margin-top: -11.5px;
     display: flex;
     border: 1px dotted rgba(0,0,0,.1);
     border-width: 0px 1px;
-    
-    mix-blend-mode: multiply;
-    z-index: 1000;
+
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px); 
+    -webkit-backdrop-filter: blur(10px); 
+
+    z-index: 100000;
 }
 
 .marq-container h2{
     white-space: nowrap;
     height: 5px;
+    font-family: ReplicaLight;
     font-size: 14px;
+    line-height: 8px;
+    letter-spacing: .3px;
     color: dodgerblue;
+    filter: drop-shadow(1px 1px .2px white);
 }
 
 .border-container{
@@ -200,11 +210,10 @@
 
 .nav-links-2{
     position: absolute;
-    top: 55px;
-    left: 282.2px;
+    top: 53px;
+    left: 250px;
     display: flex;
     flex-direction: row;
-    width: 200px;
     height: 20px;
     align-items: center;
     justify-content: center;
@@ -215,7 +224,7 @@
     font-family: ReplicaLight;
     font-size: 8px;
     letter-spacing: .3px;
-    padding: 0px 11.5px;
+    padding: 0px 12px;
     background-color: black;
     color: white;
     pointer-events: none;
@@ -255,9 +264,7 @@
 }
 
 .nav-links .link:hover{
-    color: orange;
-    filter: hue-rotate(95deg);
-    border-radius: 0px 15px 0px 0px;
+    border-radius: 0px 25px 0px 0px;
 }
 
   

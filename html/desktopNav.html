@@ -1,50 +1,51 @@
-<div class="container">
 
-    <!-- <img src="./images/eye.gif"> -->
-<!-- 
-        <div class="cube2">
-            <div class="topface2 top"></div>
-            <div class="sideface2 left"></div>
-            <div class="frontface2 front">
-                <img src="./images/eye.gif">
-            </div>
+
+
+<div class="container" id="hp-graphic" style="">
+
+
+
+    <div class="hp-about">
+        <!-- <h2>
+            &nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br>
+            -&nbsp;&nbsp;/|\&nbsp;<span style="color: purple;">*</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;/|\&nbsp;&nbsp;-&nbsp;&nbsp;/|\&nbsp;<span style="color: goldenrod;">*</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;/|\&nbsp;&nbsp;-&nbsp;&nbsp;/|\&nbsp;*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;/|\&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:dodgerblue"></span><br>
+            |.,/|\.|,<span style="color: crimson;">*</span>../|\.,<span style="color: darkblue;">*</span>/|\..|.,/|\.|,<span style="color: darkred;">*</span>../|\.,*/|\..|.,/|\.|,*../|\.,*/|\.\.\.\.///.//./...////..,,|//<br><br>
+            
+        </h2> -->
+        <h1 id="app">
+
+        </h1>
+    </div>
+
+            <div id="progress-container">
+            <dialog open id="progress-dialog">
+                <p>
+                    <label for="progress-indicator">Loading</label>
+                </p>
+                <progress max="100" id="progress-indicator"></progress>
+            </dialog>
         </div>
-       
-        <div class="cube">
-            <div class="topface top"></div>
-            <div class="sideface left">
-                <img src="./images/eye.gif">
-            </div>
-            <div class="frontface front">
-                <img src="./images/eye.gif">
-            </div>
-        </div>
+        
+    <canvas id="carouselCanvas"></canvas>
+    <div id="cardInfo" class="card-info" style="display: none;">
+        <img id="infoImage" src="./images/e.jpg" alt="Project Image">
+        <div id="infoText"></div>
+    </div>
 
-        <div class="cube3">
-            <div class="topface3 top"></div>
-            <div class="sideface3 left"></div>
-            <div class="frontface3 front">
-                <img src="./images/eye.gif">
-            </div>
-        </div>
-
-        <div class="cube4">
-            <div class="frontface4 front">
-                <img src="./images/eye.gif">
-            </div>
-        </div>
-
-        <div class="cube5">
-            <div class="topface5 top"></div>
-            <div class="sideface5 left">
-                <img src="./images/eye.gif">
-            </div>
-            <div class="frontface5 front">
-                <img src="./images/eye.gif">
-            </div>
-        </div> -->
-    
-
+   
 </div>
 
-
+    <!--  Typewriter.js  -->
+    <script>
+        var app = document.getElementById('app');
+  
+        var typewriter = new Typewriter(app, {
+          loop: true,
+          delay: 1,
+        });
+  
+        typewriter
+          .typeString('Kyung Hyun Eric is a Creative Technologist working across real-time media, generative AI, and experimental web projects. His practice explores how emerging tools can act as collaborators in storytelling, image-making, and human-machine interfaces. <br><br>')
+          .pauseFor(30000000)
+          .start();
+      </script>

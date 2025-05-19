@@ -33,6 +33,16 @@ $(document).ready(function () {
         onAllPartsLoaded();
     });
 
+    $.get("./html/researcharchive.html", function (data) {
+        $("#researcharchive").replaceWith(data);
+        onAllPartsLoaded();
+    });
+
+    $.get("./html/aboutme.html", function (data) {
+        $("#aboutme").replaceWith(data);
+        onAllPartsLoaded();
+    });
+
     $.get("./archive/projects/exampleproj.html", function (data) {
         $("#exampleproj").replaceWith(data);
         onAllPartsLoaded();
@@ -45,6 +55,57 @@ $(document).ready(function () {
 
         $.get("./archive/projects/exampleproj3.html", function (data) {
         $("#exampleproj3").replaceWith(data);
+        onAllPartsLoaded();
+    });
+
+            $.get("./archive/projects/exampleproj4.html", function (data) {
+        $("#exampleproj4").replaceWith(data);
+        onAllPartsLoaded();
+    });
+
+            $.get("./archive/projects/exampleproj5.html", function (data) {
+        $("#exampleproj5").replaceWith(data);
+        onAllPartsLoaded();
+    });
+
+            $.get("./archive/projects/exampleproj6.html", function (data) {
+        $("#exampleproj6").replaceWith(data);
+        onAllPartsLoaded();
+    });
+
+                $.get("./archive/research/researchproj.html", function (data) {
+        $("#researchproj").replaceWith(data);
+        onAllPartsLoaded();
+    });
+
+    
+                $.get("./archive/research/researchproj2.html", function (data) {
+        $("#researchproj2").replaceWith(data);
+        onAllPartsLoaded();
+    });
+
+    
+                $.get("./archive/research/researchproj3.html", function (data) {
+        $("#researchproj3").replaceWith(data);
+        onAllPartsLoaded();
+    });
+
+    
+                $.get("./archive/research/researchproj4.html", function (data) {
+        $("#researchproj4").replaceWith(data);
+        onAllPartsLoaded();
+    });
+
+    
+                $.get("./archive/research/researchproj5.html", function (data) {
+        $("#researchproj5").replaceWith(data);
+        onAllPartsLoaded();
+    });
+
+
+    
+                $.get("./archive/research/researchproj6.html", function (data) {
+        $("#researchproj6").replaceWith(data);
         onAllPartsLoaded();
     });
 });

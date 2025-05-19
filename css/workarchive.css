@@ -52,20 +52,23 @@
     box-sizing: border-box;
     transition: .3s;
     cursor: pointer;
+    overflow: hidden;
 }
 
 .work-box .archive-title{
     height: 32px;
     word-wrap: none;
     overflow: hidden;
+    padding: 0px;
 }
 
 .work-box .archive-title h1{
     font-family: ReplicaReg;
     font-size: 20px;
     line-height: 20px;
-    padding:  10px 0px 5px 0px;
+    padding:  10px 0px 0px 0px;
     margin: 0;
+
     z-index: 100;
 }
 
@@ -73,7 +76,7 @@
     font-family: ReplicaReg;
     font-size: 20px;
     line-height: 20px;
-    padding:  10px 0px 5px 0px;
+    padding:  10px 0px 10px 0px;
     margin: 0;
     color: rgba(0,0,0,0.3);
     z-index: 100;
@@ -87,9 +90,11 @@
 
 }
 
+
+
 .work-box a{
     text-decoration: none;
-     color: black;
+    color: black;
 }
 
 .work-box:hover{
@@ -97,9 +102,10 @@
     border: 1px dotted dodgerblue;
     border-width: 5px 1px 1px 1px;
     border-style: solid dotted dotted dotted;
-    border-radius: 0px 10px 0px 0px;
+    border-radius: 0px 20px 0px 0px;
 }
 
 .work-box:hover a{
     color: orangered;
 }
+
