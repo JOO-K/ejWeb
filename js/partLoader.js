@@ -1,6 +1,6 @@
 $(document).ready(function () {
     let loadedCount = 0;
-    const totalParts = 7; // Number of $.get calls
+    const totalParts = 18; // Number of $.get calls
     const onAllPartsLoaded = () => {
         if (++loadedCount === totalParts) {
             // Trigger custom event when all parts are loaded
