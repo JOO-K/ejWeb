@@ -15,9 +15,19 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error("Canvas element with ID 'carouselCanvas' not found.");
             return;
         }
-        const renderer = new THREE.WebGLRenderer({ canvas: canvas });
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true }); // Enable anti-aliasing
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio); // Account for device pixel ratio
         renderer.setClearColor(0xe0e0e0); // Set initial background to #e0e0e0
+
+        // Optionally enable anisotropic filtering if supported
+        const gl = renderer.getContext();
+        const anisotropicExt = gl.getExtension('EXT_texture_filter_anisotropic') || gl.getExtension('WEBKIT_EXT_texture_filter_anisotropic');
+        if (anisotropicExt) {
+            const maxAnisotropy = gl.getParameter(anisotropicExt.MAX_TEXTURE_MAX_ANISOTROPY_EXT);
+            THREE.Texture.DEFAULT_ANISOTROPY = Math.min(maxAnisotropy, 16); // Set anisotropy to max or 16
+            console.log("Anisotropic filtering enabled with level:", THREE.Texture.DEFAULT_ANISOTROPY);
+        }
 
         // Set initial canvas opacity to 0 and disable pointer events to prevent interference
         canvas.style.opacity = "0";
@@ -89,7 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const cardGeometry = new THREE.PlaneGeometry(2, 3);
         const geometryAspectRatio = 2 / 3; // Width / Height of the plane (2x3)
 
-        // Project data (updated to match workarchive.html with 6 projects, repeating the last 2 to make 8)
+        // Project data (updated to match workarchive.html with 6 projects)
         const projects = [
             { id: "project1", image: "./images/cube1.png", title: "3D Gaussian Splat", desc: "2025 Project", url: "./html/project1.html" },
             { id: "project2", image: "./images/cube2.png", title: "Touchdesigner AI", desc: "2024 Project", url: "./html/project2.html" },
@@ -140,6 +150,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
                         loadedTexture.repeat.set(scaleX, scaleY);
                         loadedTexture.offset.set(offsetX, offsetY);
+                        // Improve texture filtering for mobile
+                        loadedTexture.minFilter = THREE.LinearMipmapLinearFilter; // Better downscaling
+                        loadedTexture.magFilter = THREE.NearestFilter; // Sharper upscaling
                         loadedTexture.needsUpdate = true;
 
                         if (loadedTextures === totalTextures) {
@@ -212,6 +225,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     undefined,
                     (err) => console.error(`Failed to load cube face ${index + 1} texture: ${textureUrl}`, err)
                 );
+                // Improve texture filtering for mobile
+                texture.minFilter = THREE.LinearMipmapLinearFilter;
+                texture.magFilter = THREE.NearestFilter;
+                texture.needsUpdate = true;
                 return new THREE.MeshBasicMaterial({ map: texture });
             });
 
@@ -288,6 +305,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // Handle window resize
             window.addEventListener("resize", () => {
                 renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(window.devicePixelRatio); // Update pixel ratio on resize
                 camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
                 updateCameraSettings(); // Update camera settings on resize
