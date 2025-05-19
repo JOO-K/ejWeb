@@ -58,9 +58,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (isMobile) {
                 // Settings for screens < 600px
-                initialZ = 0;
+                initialZ = 6;
                 targetZ = 3;
-                cameraY = 50;
+                cameraY = 40;
                 controlsTargetY = -1;
             } else {
                 // Settings for screens ≥ 600px (original settings)
