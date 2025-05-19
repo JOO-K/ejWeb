@@ -69,15 +69,15 @@ document.addEventListener("DOMContentLoaded", () => {
             if (isMobile) {
                 // Settings for screens < 600px
                 initialZ = 6;
-                targetZ = 3;
-                cameraY = 200;
-                controlsTargetY = 3;
+                targetZ = -3;
+                cameraY = 10;
+                controlsTargetY = -3;
             } else {
                 // Settings for screens ≥ 600px (original settings)
                 initialZ = 8;
-                targetZ = 3;
+                targetZ = 5;
                 cameraY = 20;
-                controlsTargetY = -5;
+                controlsTargetY = -3;
             }
 
             currentZ = initialZ;
