@@ -60,8 +60,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Settings for screens < 600px
                 initialZ = 6;
                 targetZ = 3;
-                cameraY = 40;
-                controlsTargetY = -1;
+                cameraY = 200;
+                controlsTargetY = 3;
             } else {
                 // Settings for screens ≥ 600px (original settings)
                 initialZ = 8;
