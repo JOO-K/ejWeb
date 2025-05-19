@@ -29,6 +29,15 @@
     pointer-events: none;
 }
 
+@media all and (max-width: 800px) {
+    .hp-about{
+    max-width: none;
+        padding: 15px;
+    }
+}
+
+
+
 .hp-about h1{
     max-width: 600px;
     width: 60%; 
@@ -38,7 +47,18 @@
     line-height: 32px;
     color: black;
     margin-top: 125px;
-    filter: drop-shadow(0px 0px 3px #e0e0e0) drop-shadow(0px 0px 2px #e0e0e0) drop-shadow(0px 0px 1px #e0e0e0);
+    filter: drop-shadow(0px 0px 5px #e0e0e0) drop-shadow(0px 0px 2px #e0e0e0) drop-shadow(0px 0px 1px #e0e0e0)drop-shadow(0px 0px .5px #e0e0e0)drop-shadow(0px 0px .5px #e0e0e0);
+}
+
+@media all and (max-width: 800px) {
+    .hp-about h1 {
+      max-width: none;
+      width: calc(100vw - 30px);
+      min-width: 200px;
+      font-size: 15px;
+      line-height: 23.5px;
+      margin-top: 100px;
+    }
 }
 
 .hp-about h2{

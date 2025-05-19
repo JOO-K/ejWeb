@@ -1,5 +1,16 @@
 document.addEventListener("DOMContentLoaded", () => {
+    // Fallback timeout to initialize the carousel if "allPartsLoaded" doesn't fire
+    const eventTimeout = setTimeout(() => {
+        console.warn('"allPartsLoaded" event did not fire within 10 seconds, forcing initialization...');
+        initializeCarousel();
+    }, 10000); // 10 seconds timeout
+
     $(document).on("allPartsLoaded", () => {
+        clearTimeout(eventTimeout); // Clear the timeout if the event fires
+        initializeCarousel();
+    });
+
+    function initializeCarousel() {
         console.log("Initializing 3D carousel...");
 
         // Check if THREE is loaded
@@ -69,15 +80,15 @@ document.addEventListener("DOMContentLoaded", () => {
             if (isMobile) {
                 // Settings for screens < 600px
                 initialZ = 6;
-                targetZ = -3;
-                cameraY = 10;
-                controlsTargetY = -3;
+                targetZ = 3;
+                cameraY = 200;
+                controlsTargetY = 3;
             } else {
                 // Settings for screens ≥ 600px (original settings)
                 initialZ = 8;
-                targetZ = 5;
+                targetZ = 3;
                 cameraY = 20;
-                controlsTargetY = -3;
+                controlsTargetY = -5;
             }
 
             currentZ = initialZ;
@@ -116,6 +127,16 @@ document.addEventListener("DOMContentLoaded", () => {
         // Create and position cards with texture loading
         let loadedTextures = 0;
         const totalTextures = projects.length;
+        let textureLoadTimeout; // Timeout for texture loading
+
+        // Set a timeout to force initialization if textures don't load within 10 seconds
+        textureLoadTimeout = setTimeout(() => {
+            console.warn("Texture loading timed out after 10 seconds, forcing initialization...");
+            if (loadedTextures < totalTextures) {
+                loadedTextures = totalTextures; // Force completion
+                initializeScene();
+            }
+        }, 10000); // 10 seconds timeout
 
         projects.forEach((project, index) => {
             let material;
@@ -156,6 +177,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         loadedTexture.needsUpdate = true;
 
                         if (loadedTextures === totalTextures) {
+                            clearTimeout(textureLoadTimeout);
                             initializeScene();
                         }
                     },
@@ -168,6 +190,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             progressIndicator.value = (loadedTextures / totalTextures) * 100;
                         }
                         if (loadedTextures === totalTextures) {
+                            clearTimeout(textureLoadTimeout);
                             initializeScene();
                         }
                     }
@@ -182,6 +205,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     progressIndicator.value = (loadedTextures / totalTextures) * 100;
                 }
                 if (loadedTextures === totalTextures) {
+                    clearTimeout(textureLoadTimeout);
                     initializeScene();
                 }
             }
@@ -425,5 +449,5 @@ document.addEventListener("DOMContentLoaded", () => {
             window.addEventListener("mousemove", onMouseMove);
             window.addEventListener("click", onClick);
         }
-    });
+    }
 });

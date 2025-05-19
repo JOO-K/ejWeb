@@ -16,6 +16,15 @@
     transform: translateY(0vh);
 }
 
+@media all and (max-width: 800px) {
+    .workarchive-container{
+        padding: 15px;
+            padding-top: 100px;
+        width: calc(100vw - 30px);
+        height: calc(100vh - 0px);
+    }
+}
+
 
 @keyframes archiveload {
 
@@ -53,6 +62,12 @@
     transition: .3s;
     cursor: pointer;
     overflow: hidden;
+}
+
+@media all and (max-width: 800px) {
+    .work-box{
+    height: 220px;
+    }
 }
 
 .work-box .archive-title{

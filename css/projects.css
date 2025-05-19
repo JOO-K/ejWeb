@@ -49,9 +49,22 @@
     justify-content: space-between;
 }
 
+@media all and (max-width: 800px) {
+    .project-box{
+        padding: 15px;
+        flex-direction: column;
+    }
+}
+
 .project-box .text-aisle {
     width: 36%;
 
+}
+
+@media all and (max-width: 800px) {
+    .project-box .text-aisle{
+        width: 100%;
+    }
 }
 
 .project-box .text-aisle h1 {
@@ -83,8 +96,21 @@
     margin-top: 25px;
 }
 
+@media all and (max-width: 800px) {
+    .project-box .text-aisle h3{
+        margin-top: 0px;
+    }
+}
+
+
 .project-box .image-aisle {
     width: 58%;
+}
+
+@media all and (max-width: 800px) {
+    .project-box .image-aisle{
+        width: 100%;
+    }
 }
 
 .project-box .image-aisle img {
