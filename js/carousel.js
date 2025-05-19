@@ -31,6 +31,15 @@ document.addEventListener("DOMContentLoaded", () => {
         renderer.setPixelRatio(window.devicePixelRatio); // Account for device pixel ratio
         renderer.setClearColor(0xe0e0e0); // Set initial background to #e0e0e0
 
+        // Pre-render an empty scene to fill the canvas with the clear color immediately
+        renderer.render(scene, camera); // Render an empty frame to avoid black flash
+
+        // Set initial canvas opacity to 0 and start fade-in immediately
+        canvas.style.opacity = "0";
+        canvas.style.transition = "opacity 1s ease-in";
+        canvas.style.pointerEvents = "none"; // Disable pointer events during loading
+        canvas.style.opacity = "1"; // Start fade-in immediately
+
         // Optionally enable anisotropic filtering if supported
         const gl = renderer.getContext();
         const anisotropicExt = gl.getExtension('EXT_texture_filter_anisotropic') || gl.getExtension('WEBKIT_EXT_texture_filter_anisotropic');
@@ -257,7 +266,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             const cube = new THREE.Mesh(cubeGeometry, cubeMaterials);
-            cube.position.set(0, -6.3, 0); // Place at the center of the carousel (based on initial lookAt)
+            cube.position.set(0, -6.2, 0); // Place at the center of the carousel (based on initial lookAt)
             scene.add(cube);
             console.log("WebGL cube with image textures added at position:", cube.position);
 

@@ -8,11 +8,6 @@ $(document).ready(function () {
         }
     };
 
-    $.get("./html/desktopNav.html", function (data) {
-        $("#desktopNav-Placeholder").replaceWith(data);
-        onAllPartsLoaded();
-    });
-
     $.get("./html/backgroundAnimation.html", function (data) {
         $("#backgroundAnimation-Placeholder").replaceWith(data);
         onAllPartsLoaded();

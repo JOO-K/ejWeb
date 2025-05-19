@@ -30,10 +30,23 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap"
     rel="stylesheet">
 
+  <canvas id="carouselCanvas"></canvas>
+  <script src="./js/three.min.js"></script>
+  <script src="./js/OrbitControls.js"></script>
+  <script src="./js/CSS3DRenderer.js"></script>
 
 </head>
 
 <body>
+  <script src="https://unpkg.com/react@16/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+
+  <script type="text/javascript" src="./js/partLoader.js"></script>
+  <script type="text/javascript" src="./js/menu.js"></script>
 
   <div class="" id="navigation"></div>
 
@@ -43,7 +56,45 @@
 
   <div class="" id="aboutme"></div>
 
-  <div class="" id="desktopNav-Placeholder"></div>
+  <div class="container" id="hp-graphic" style="">
+
+
+
+    <div class="hp-about">
+      <!-- <h2>
+            &nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br>
+            -&nbsp;&nbsp;/|\&nbsp;<span style="color: purple;">*</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;/|\&nbsp;&nbsp;-&nbsp;&nbsp;/|\&nbsp;<span style="color: goldenrod;">*</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;/|\&nbsp;&nbsp;-&nbsp;&nbsp;/|\&nbsp;*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;/|\&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:dodgerblue"></span><br>
+            |.,/|\.|,<span style="color: crimson;">*</span>../|\.,<span style="color: darkblue;">*</span>/|\..|.,/|\.|,<span style="color: darkred;">*</span>../|\.,*/|\..|.,/|\.|,*../|\.,*/|\.\.\.\.///.//./...////..,,|//<br><br>
+            
+        </h2> -->
+      <h1 id="app">
+
+      </h1>
+    </div>
+
+
+    <div id="cardInfo" class="card-info" style="display: none;">
+      <img id="infoImage" src="./images/e.jpg" alt="Project Image">
+      <div id="infoText"></div>
+    </div>
+
+
+  </div>
+
+  <!--  Typewriter.js  -->
+  <script>
+    var app = document.getElementById('app');
+
+    var typewriter = new Typewriter(app, {
+      loop: true,
+      delay: 1,
+    });
+
+    typewriter
+      .typeString('Kyung Hyun Eric is a Creative Technologist working across real-time media, generative AI, and experimental web projects. His practice explores how emerging tools can act as collaborators in storytelling, image-making, and human-machine interfaces. <br><br>')
+      .pauseFor(30000000)
+      .start();
+  </script>
 
   <div class="" id="exampleproj"></div>
   <div class="" id="exampleproj2"></div>
@@ -63,20 +114,10 @@
   <!-- JAVASCRIPT PRELOADS & EXAMPLES -->
 
 
-  <script src="https://unpkg.com/react@16/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-
-  <script type="text/javascript" src="./js/partLoader.js"></script>
-  <script type="text/javascript" src="./js/menu.js"></script>
 
 
-  <script src="./js/three.min.js"></script>
-  <script src="./js/OrbitControls.js"></script>
-   <script src="./js/CSS3DRenderer.js"></script>
   <script src="./js/carousel.js"></script>
+
 
 
   <span>
