@@ -57,7 +57,7 @@
 
   <div class="" id="aboutme"></div>
 
-   <div class="" id="desktopNav-Placeholder"></div>
+  <div class="" id="desktopNav-Placeholder"></div>
 
 
 
@@ -85,69 +85,7 @@
 
 
 
-  <span>
 
-
-
-    <!-- tilt.js -->
-    <script type="text/javascript" src="./js/vanilla-tilt.js"></script>
-    <script type="text/javascript">
-
-      var card = document.querySelectorAll(".card")
-      for (var i = 0; i < card.length; i++) {
-        card[i].setAttribute("data-tilt", "");
-        card[i].setAttribute("data-tilt-reset", "false");
-      }
-
-      VanillaTilt.init(card, {
-        reverse: true,
-        max: 30,
-        startX: -0,
-        startY: -0,
-        speed: 5000,
-
-        scale: 1.010,
-        transition: true,
-        gyroscope: true,
-        gyroscopeMaxAngleX: 20,
-        gyroscopeMinAngleX: -20
-      });
-    </script>
-
-
-
-    <script>
-
-      // Reset VanillaTilt
-
-      timeOut = 500; // delay in milliseconds
-
-      $(".container").mouseleave(function () {
-        setTimeout(function () {
-          var card = document.querySelectorAll(".card")
-          for (var i = 0; i < card.length; i++) {
-            card[i].vanillaTilt.destroy();
-          }
-          VanillaTilt.init(card, {
-            reverse: true,
-            max: 30,
-            startX: 0,
-            startY: 0,
-            speed: 5000,
-            scale: 1.010,
-            transition: true,
-            gyroscope: true,
-            gyroscopeMaxAngleX: 20,
-            gyroscopeMinAngleX: -20
-          });
-        }, timeOut);
-      })
-
-    </script>
-
-
-
-  </span>
 
 
 

@@ -5,10 +5,10 @@
     margin: 0px;
     width: calc(100vw - 60px);
     height: calc(100vh - 180px);
-    overflow: hidden;
+    overflow-y: auto;
     display: none;
     flex-direction: column;
-    background-color: #fff;
+    background-color: #e0e0e0;
     padding: 30px;
     padding-top: 150px;
     z-index: 10000;
@@ -21,7 +21,7 @@
         padding: 15px;
             padding-top: 100px;
         width: calc(100vw - 30px);
-        height: calc(100vh - 200px);
+        height: calc(100vh - 00px);
          padding-top: 0px;
     }
 }
@@ -49,6 +49,13 @@
     flex-direction: row;
     justify-content: space-between;
     flex-wrap: wrap;
+
+}
+
+@media all and (max-width: 800px) {
+    .archive-box{
+    margin-top: 90px;
+    }
 }
 
 .work-box{
@@ -67,7 +74,7 @@
 
 @media all and (max-width: 800px) {
     .work-box{
-    height: 160px;
+    height: 260px;
     }
 }
 
@@ -84,8 +91,13 @@
     line-height: 20px;
     padding:  10px 0px 0px 0px;
     margin: 0;
-
     z-index: 100;
+}
+
+@media all and (max-width: 800px) {
+    .work-box .archive-title h1{
+     padding:  0px 0px 0px 0px;
+    line-height: 40px;
 }
 
 .archive-subtext{
