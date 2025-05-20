@@ -31,15 +31,6 @@ document.addEventListener("DOMContentLoaded", () => {
         renderer.setPixelRatio(window.devicePixelRatio); // Account for device pixel ratio
         renderer.setClearColor(0xe0e0e0); // Set initial background to #e0e0e0
 
-        // Pre-render an empty scene to fill the canvas with the clear color immediately
-        renderer.render(scene, camera); // Render an empty frame to avoid black flash
-
-        // Set initial canvas opacity to 0 and start fade-in immediately
-        canvas.style.opacity = "0";
-        canvas.style.transition = "opacity 1s ease-in";
-        canvas.style.pointerEvents = "none"; // Disable pointer events during loading
-        canvas.style.opacity = "1"; // Start fade-in immediately
-
         // Optionally enable anisotropic filtering if supported
         const gl = renderer.getContext();
         const anisotropicExt = gl.getExtension('EXT_texture_filter_anisotropic') || gl.getExtension('WEBKIT_EXT_texture_filter_anisotropic');
@@ -67,33 +58,35 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Responsive camera settings based on screen width
         let initialZ, targetZ, currentZ, cameraY, controlsTargetY;
-        const zoomSpeed = 0.02; // Speed of zoom animation
+        const isMobile = window.innerWidth < 800;
+        const zoomSpeed = isMobile ? 0.1 : 0.02; // Faster zoom on mobile (0.1) vs desktop (0.02)
 
-        // Optional OrbitControls (initialize before updateCameraSettings)
+        // Initialize OrbitControls but disable interactive features
         let controls;
         if (typeof THREE.OrbitControls !== "undefined") {
             controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableZoom = true;
-            controls.enablePan = false;
-            controls.maxDistance = 8; // Set maximum zoom-out distance
+            controls.enableZoom = false; // Disable zooming
+            controls.enableRotate = false; // Disable rotation
+            controls.enablePan = false; // Disable panning
+            controls.maxDistance = 8; // Set maximum zoom-out distance (still used for camera positioning)
             controls.saveState();
             controls.update();
-            console.log("OrbitControls initialized with zooming enabled. Max zoom-out distance set to:", controls.maxDistance);
+            console.log("OrbitControls initialized with all interactive features disabled. Max distance set to:", controls.maxDistance);
         } else {
             console.warn("OrbitControls not found. Camera controls disabled.");
         }
 
         function updateCameraSettings() {
-            const isMobile = window.innerWidth < 600;
+            const isMobile = window.innerWidth < 800;
 
             if (isMobile) {
-                // Settings for screens < 600px
-                initialZ = 6;
-                targetZ = 3;
-                cameraY = 200;
+                // Settings for screens < 800px
+                initialZ = 15;
+                targetZ = 0.5;
+                cameraY = 1000;
                 controlsTargetY = 3;
             } else {
-                // Settings for screens ≥ 600px (original settings)
+                // Settings for screens ≥ 800px (original settings)
                 initialZ = 8;
                 targetZ = 3;
                 cameraY = 20;
@@ -335,13 +328,23 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             animate();
 
-            // Handle window resize
+            // Handle window resize with breakpoint optimization
+            let previousWidth = window.innerWidth;
             window.addEventListener("resize", () => {
-                renderer.setSize(window.innerWidth, window.innerHeight);
+                const currentWidth = window.innerWidth;
+                renderer.setSize(currentWidth, window.innerHeight);
                 renderer.setPixelRatio(window.devicePixelRatio); // Update pixel ratio on resize
-                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.aspect = currentWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
-                updateCameraSettings(); // Update camera settings on resize
+
+                // Only update camera settings if crossing the 800px breakpoint
+                const wasMobile = previousWidth < 800;
+                const isMobile = currentWidth < 800;
+                if (wasMobile !== isMobile) {
+                    console.log("Breakpoint crossed at 800px, updating camera settings. Previous width:", previousWidth, "Current width:", currentWidth);
+                    updateCameraSettings();
+                }
+                previousWidth = currentWidth;
             });
 
             // Interaction: Click or Hover
@@ -381,17 +384,28 @@ document.addEventListener("DOMContentLoaded", () => {
                 const isMenuClick = target.closest('#menu') || target.closest('#menu2');
                 const projectIds = ["project1", "project2", "project3", "project4", "project5", "project6"];
                 const isProjectClick = projectIds.some(id => target.closest(`#${id}`));
-                const isNavigationClick = target.closest('#navWrapper'); // Updated to target the nav-wrapper
+                const isNavigationClick = target.closest('#navWrapper');
 
                 if (isMenuClick || isProjectClick || isNavigationClick) {
                     console.log("Click detected on menu, project, or navigation, ignoring canvas click. Menu:", isMenuClick, "Project:", isProjectClick, "Navigation:", isNavigationClick);
                     return; // Ignore clicks on menus, projects, or navigation elements
                 }
 
-                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+                // Handle both mouse clicks and touch events
+                const clientX = event.clientX || (event.changedTouches && event.changedTouches.length > 0 ? event.changedTouches[0].clientX : null);
+                const clientY = event.clientY || (event.changedTouches && event.changedTouches.length > 0 ? event.changedTouches[0].clientY : null);
+
+                if (clientX === null || clientY === null) {
+                    console.warn("Unable to determine click/touch coordinates.");
+                    return;
+                }
+
+                mouse.x = (clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(clientY / window.innerHeight) * 2 + 1;
                 raycaster.setFromCamera(mouse, camera);
                 const intersects = raycaster.intersectObjects(cards);
+                console.log("Raycaster intersects on click/touch:", intersects.length, intersects);
+
                 if (intersects.length > 0) {
                     const card = intersects[0].object;
                     const projectId = card.userData.project.id;
@@ -448,15 +462,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
 
-            // Listen for project close events (e.g., when returning to the homepage)
-            $(document).on("projectClosed", () => {
-                // Re-enable canvas pointer events when the project is closed
-                canvas.style.pointerEvents = "auto";
-                console.log("Project closed, canvas pointer events re-enabled.");
-            });
+            // Listen for click (desktop) and touchend (mobile) events
+            window.addEventListener("click", onClick);
+            window.addEventListener("touchend", onClick);
 
             window.addEventListener("mousemove", onMouseMove);
-            window.addEventListener("click", onClick);
         }
     }
 });
