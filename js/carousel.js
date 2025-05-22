@@ -72,10 +72,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         function updateCameraSettings() {
             if (isMobile) {
-                initialZ = 15;
-                targetZ = 0.5;
-                cameraY = 1000;
-                controlsTargetY = 3;
+                initialZ = 13;
+                targetZ = -.5;
+                cameraY = 10;
+                controlsTargetY = 4;
             } else {
                 initialZ = 8;
                 targetZ = 3;
@@ -295,6 +295,19 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             function onMouseMove(event) {
+                const target = event.target;
+                const isNavigationHover = target.closest('#navWrapper');
+                const isContactButtonHover = target.closest('#contactbutton') || target.closest('#mobilecontactbutton');
+
+                // Ignore hover events over navigation or contact buttons
+                if (isNavigationHover || isContactButtonHover) {
+                    console.log("Mouse over navigation or contact button, ignoring hover. Nav:", isNavigationHover, "ContactButton:", isContactButtonHover);
+                    infoDiv.style.display = "none";
+                    isHovering = false;
+                    canvas.style.cursor = "default";
+                    return;
+                }
+
                 mouse.x = (event.clientX / initialWidth) * 2 - 1;
                 mouse.y = -(event.clientY / initialHeight) * 2 + 1;
                 raycaster.setFromCamera(mouse, camera);
@@ -316,12 +329,13 @@ document.addEventListener("DOMContentLoaded", () => {
             function onClick(event) {
                 const target = event.target;
                 const isMenuClick = target.closest('#menu') || target.closest('#menu2');
-                const isProjectClick = target.closest('.project-container'); // Generic check for any project container
+                const isProjectClick = target.closest('.project-container');
                 const isNavigationClick = target.closest('#navWrapper');
                 const isAboutWrapperClick = target.closest('#about-wrapper');
+                const isContactButtonClick = target.closest('#contactbutton') || target.closest('#mobilecontactbutton');
 
-                if (isMenuClick || isProjectClick || isNavigationClick || isAboutWrapperClick) {
-                    console.log("Click detected on menu, project, navigation, or about-wrapper, ignoring canvas click. Menu:", isMenuClick, "Project:", isProjectClick, "Navigation:", isNavigationClick, "AboutWrapper:", isAboutWrapperClick);
+                if (isMenuClick || isProjectClick || isNavigationClick || isAboutWrapperClick || isContactButtonClick) {
+                    console.log("Click detected on menu, project, navigation, about-wrapper, or contact button, ignoring canvas click. Menu:", isMenuClick, "Project:", isProjectClick, "Navigation:", isNavigationClick, "AboutWrapper:", isAboutWrapperClick, "ContactButton:", isContactButtonClick);
                     return;
                 }
 
@@ -389,6 +403,17 @@ document.addEventListener("DOMContentLoaded", () => {
                     console.log("Scrolled to top.");
                 }
             }
+
+            // Stop clicks on contact buttons from bubbling up to the carousel
+            document.getElementById('contactbutton')?.addEventListener('click', (event) => {
+                event.stopPropagation();
+                console.log("Click on contactbutton stopped propagation.");
+            });
+
+            document.getElementById('mobilecontactbutton')?.addEventListener('click', (event) => {
+                event.stopPropagation();
+                console.log("Click on mobilecontactbutton stopped propagation.");
+            });
 
             window.addEventListener("click", onClick);
             window.addEventListener("touchend", onClick);
