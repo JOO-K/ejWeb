@@ -10,7 +10,7 @@
     background-color: #e0e0e0;
     padding: 30px;
     padding-top: 150px;
-    z-index: 10000;
+    z-index: 100000;
     animation: .25s archiveload ease-out;
     transform: translateY(0vh);
 }
