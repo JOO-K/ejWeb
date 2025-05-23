@@ -46,6 +46,20 @@
         <div id="infoText"></div>
     </div>
 
+    <form method="POST" id="form">
+
+    <input type="hidden" name="access_key" value="74c03fd8-9863-46ef-b489-f63c82ccc499">
+
+    <input type="text" name="name"placeholder="name" required>
+    <input type="email" name="email" placeholder="email" required>
+    <textarea name="message" placeholder="leave a note" required></textarea>
+    <input type="checkbox" name="botcheck" class="hidden" style="display: none;">
+
+    <button type="submit">Submit</button>
+
+    <div id="result"></div>
+
+</form>
    
 </div>
 
@@ -63,4 +77,3 @@
           .pauseFor(30000000)
           .start();
       </script>
-      

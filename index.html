@@ -76,13 +76,57 @@
 
 
 
+
   <!-- JAVASCRIPT PRELOADS & EXAMPLES -->
 
 
 
 
   <script src="./js/carousel.js"></script>
+  <script src="./js/contact.js"></script>
 
+<script>
+    $(document).on("allPartsLoaded", function () {
+        console.log("allPartsLoaded event fired, initializing contact button handlers.");
+
+        // Debug: Check if buttons and form are found
+        const buttons = document.querySelectorAll("#contactbutton, #mobilecontactbutton");
+        const form = document.getElementById("form");
+        console.log("Found contact buttons:", buttons.length, Array.from(buttons).map(btn => btn.id));
+        console.log("Form element:", form);
+
+        // Contact form toggle for contactbutton (desktop) and mobilecontactbutton (mobile)
+        buttons.forEach(button => {
+            button.addEventListener("click", function (event) {
+                event.stopPropagation(); // Prevent click from bubbling to carousel.js
+                const form = document.getElementById("form");
+
+                // Ensure #form exists in the DOM
+                if (!form) {
+                    console.error("Form element with ID 'form' not found in DOM. Cannot toggle.");
+                    return;
+                }
+
+                // Toggle display with a slight delay to ensure DOM rendering
+                const isOpening = form.style.display === "none" || form.style.display === "";
+                const newDisplay = isOpening ? "flex" : "none";
+                console.log("Form display before toggle (inline style):", form.style.display || "none");
+                console.log("Toggling form to:", newDisplay);
+
+                setTimeout(() => {
+                    form.style.display = newDisplay;
+                    // Debug: Check computed styles after toggle
+                    const computedStyle = window.getComputedStyle(form);
+                    console.log("Form display after toggle (inline style):", form.style.display);
+                    console.log("Computed display:", computedStyle.display);
+                    console.log("Computed visibility:", computedStyle.visibility);
+                    console.log("Computed opacity:", computedStyle.opacity);
+                    console.log("Computed z-index:", computedStyle.zIndex);
+                }, 100);
+            });
+        });
+    });
+    </script>
 
 
 

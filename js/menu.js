@@ -142,6 +142,7 @@ $(document).ready(function () {
             const $menu2 = $("#menu2");
             const $aboutwrapper = $("#about-wrapper");
             const $hpgraphic = $("#hp-graphic");
+            const $form = $("#form");
 
             // Hide all project containers
             $(".project-container").css("display", "none");
@@ -167,6 +168,11 @@ $(document).ready(function () {
             $menu2.css("display", "none");
             if ($aboutwrapper.length) {
                 $aboutwrapper.css("display", "none");
+            }
+            // Close the form when opening a project
+            if ($form.length) {
+                $form.css("display", "none");
+                console.log("Closed form when opening project.");
             }
             console.log("Menus and about wrapper closed.");
 

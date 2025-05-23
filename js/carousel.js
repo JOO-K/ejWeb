@@ -298,10 +298,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 const target = event.target;
                 const isNavigationHover = target.closest('#navWrapper');
                 const isContactButtonHover = target.closest('#contactbutton') || target.closest('#mobilecontactbutton');
+                const isFormHover = target.closest('#form');
 
-                // Ignore hover events over navigation or contact buttons
-                if (isNavigationHover || isContactButtonHover) {
-                    console.log("Mouse over navigation or contact button, ignoring hover. Nav:", isNavigationHover, "ContactButton:", isContactButtonHover);
+                // Ignore hover events over navigation, contact buttons, or form
+                if (isNavigationHover || isContactButtonHover || isFormHover) {
+                    // Only log when debugging is needed
+                    // console.log("Ignoring hover over element:", { Nav: isNavigationHover, ContactButton: isContactButtonHover, Form: isFormHover });
                     infoDiv.style.display = "none";
                     isHovering = false;
                     canvas.style.cursor = "default";
@@ -333,9 +335,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 const isNavigationClick = target.closest('#navWrapper');
                 const isAboutWrapperClick = target.closest('#about-wrapper');
                 const isContactButtonClick = target.closest('#contactbutton') || target.closest('#mobilecontactbutton');
+                const isFormClick = target.closest('#form');
 
-                if (isMenuClick || isProjectClick || isNavigationClick || isAboutWrapperClick || isContactButtonClick) {
-                    console.log("Click detected on menu, project, navigation, about-wrapper, or contact button, ignoring canvas click. Menu:", isMenuClick, "Project:", isProjectClick, "Navigation:", isNavigationClick, "AboutWrapper:", isAboutWrapperClick, "ContactButton:", isContactButtonClick);
+                if (isMenuClick || isProjectClick || isNavigationClick || isAboutWrapperClick || isContactButtonClick || isFormClick) {
+                    console.log("Click detected on menu, project, navigation, about-wrapper, contact button, or form, ignoring canvas click. Menu:", isMenuClick, "Project:", isProjectClick, "Navigation:", isNavigationClick, "AboutWrapper:", isAboutWrapperClick, "ContactButton:", isContactButtonClick, "Form:", isFormClick);
                     return;
                 }
 
@@ -413,6 +416,12 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById('mobilecontactbutton')?.addEventListener('click', (event) => {
                 event.stopPropagation();
                 console.log("Click on mobilecontactbutton stopped propagation.");
+            });
+
+            // Stop clicks on the form from bubbling up to the carousel
+            document.getElementById('form')?.addEventListener('click', (event) => {
+                event.stopPropagation();
+                console.log("Click on form stopped propagation.");
             });
 
             window.addEventListener("click", onClick);

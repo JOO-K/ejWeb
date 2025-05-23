@@ -109,3 +109,81 @@ body {
 }
 
 .wrapper {}
+
+#form {
+  position: absolute;
+  left: 30px;
+  top: 50%;
+  width: 30vw;
+  max-width: 500px;
+  z-index: 10000000;
+  display: none;
+  flex-direction: column;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 5px 30px 5px 5px;
+}
+
+@media all and (max-width: 800px) {
+  #form {
+    left: 15px;
+    width: calc(100vw - 60px);
+    max-width: unset;
+    bottom: 50px;
+
+  }
+}
+
+input {
+  margin: 0px 0px 10px 0px;
+  border: none;
+  border-radius: 3px 15px 3px 3px;
+  font-family: ReplicaLight;
+  letter-spacing: 1px;
+  font-size: 15px;
+  padding: 10px;
+    background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+input:focus{
+  border: 1px dashed black;
+}
+
+textarea {
+  height: 150px;
+  margin-bottom: 10px;
+  border: none;
+  border-radius: 3px;
+  padding: 10px;
+  font-family: ReplicaLight;
+  letter-spacing: 1px;
+  font-size: 15px;
+    background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+button {
+  border: none;
+  min-width: 100px;
+  border-radius: 10px;
+  font-family: ReplicaLight;
+  letter-spacing: 1px;
+  font-size: 15px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-sizing: border-box;
+  border: .1px solid rgba(0,0,0,0.4);
+}
+
+#result{
+  font-family: ReplicaLight;
+  letter-spacing: 1px;
+  font-size: 10px;
+}
