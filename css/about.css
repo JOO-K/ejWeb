@@ -6,13 +6,13 @@
 
 .about-container {
     position: absolute;
-    top: 0;
+    top: 0px;
     left: 0;
     width: 100vw;
     height: 100vh;
     background-color: #e0e0e0 !important;
     z-index: 1001;
-    padding: 30px;
+    padding: 60px;
     opacity: 1 !important;
     display: none;
     box-sizing: border-box;
@@ -20,7 +20,8 @@
 
 @media all and (max-width: 800px) {
     .about-container {
-        padding: 15px;
+        padding: 25px;
+        top: 0px;
     }
 }
 
@@ -40,7 +41,7 @@
 @media all and (max-width: 800px) {
     .about-container h1 {
         max-width: none;
-        min-width: calc(100vw - 30px);
+        min-width: calc(100vw - 50px);
         font-size: 15px;
         line-height: 23.5px;
         margin-top: 85px;

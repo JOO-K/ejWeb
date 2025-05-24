@@ -165,22 +165,32 @@ textarea {
     background: rgba(255, 255, 255, 0.4);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  resize: none;
+  overflow: scroll;
+  
 }
 
 button {
   border: none;
   min-width: 100px;
-  border-radius: 10px;
+  border-radius: 88px;
   font-family: ReplicaLight;
   letter-spacing: 1px;
   font-size: 15px;
   padding: 10px;
-  color: rgba(0, 0, 0, 0.3);
-  background: rgba(255, 255, 255, 0.4);
+  color: rgba(0, 0, 0, 0.6);
+  background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   box-sizing: border-box;
   border: .1px solid rgba(0,0,0,0.4);
+  transition: .1s;
+}
+
+button:hover{
+  background-color: dodgerblue;
+  cursor: pointer;
+  color: white;
 }
 
 #result{

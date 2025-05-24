@@ -32,7 +32,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
         renderer.setSize(initialWidth, initialHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.setClearColor(0xe0e0e0);
+        renderer.setClearColor(0xe0e0e0); // Set renderer clear color to #e0e0e0
+        console.log("Renderer clear color set to:", renderer.getClearColor().getHexString());
 
         const gl = renderer.getContext();
         const anisotropicExt = gl.getExtension('EXT_texture_filter_anisotropic') || gl.getExtension('WEBKIT_EXT_texture_filter_anisotropic');
@@ -45,6 +46,8 @@ document.addEventListener("DOMContentLoaded", () => {
         canvas.style.opacity = "0";
         canvas.style.transition = "opacity 1s ease-in";
         canvas.style.pointerEvents = "none";
+        // Set a fallback background color for the canvas
+        canvas.style.backgroundColor = "#e0e0e0";
 
         const progressDialog = document.getElementById("progress-dialog");
         const progressIndicator = document.getElementById("progress-indicator");
@@ -197,6 +200,57 @@ document.addEventListener("DOMContentLoaded", () => {
             cards.push(card);
         });
 
+        let sphere;
+        let skybox;
+        let backgroundIndex = 0; // Track the current background state (0 = solid color, 1-3 = skybox textures)
+        const backgroundPaths = [
+            null, // Will be replaced with a solid color texture
+            './images/sky3.jpg',
+            './images/sky2.jpg',
+            './images/sky1.jpg'
+        ];
+        const backgroundTextures = [];
+
+        // Create a solid #e0e0e0 texture for the initial background
+        const solidColorCanvas = document.createElement('canvas');
+        solidColorCanvas.width = 512;
+        solidColorCanvas.height = 512;
+        const context = solidColorCanvas.getContext('2d');
+        context.fillStyle = '#e0e0e0';
+        context.fillRect(0, 0, solidColorCanvas.width, solidColorCanvas.height);
+        const solidColorTexture = new THREE.CanvasTexture(solidColorCanvas);
+        solidColorTexture.needsUpdate = true;
+        console.log("Created solid #e0e0e0 texture for initial skybox background");
+
+        // Preload background textures
+        backgroundPaths.forEach((path, index) => {
+            if (index === 0) {
+                // Use the solid color texture for the first background
+                backgroundTextures[index] = solidColorTexture;
+            } else if (path) {
+                const texture = new THREE.TextureLoader().load(
+                    path,
+                    () => console.log(`Background texture ${index} loaded: ${path}`),
+                    undefined,
+                    (err) => console.error(`Failed to load background texture ${index}: ${path}`, err)
+                );
+                texture.mapping = THREE.EquirectangularReflectionMapping;
+                backgroundTextures[index] = texture;
+            }
+        });
+
+        function applyBackground(index) {
+            if (backgroundTextures[index]) {
+                skybox.material.map = backgroundTextures[index];
+                skybox.material.needsUpdate = true;
+                if (index === 0) {
+                    console.log("Applied solid #e0e0e0 background");
+                } else {
+                    console.log(`Applied background: ${backgroundPaths[index]}`);
+                }
+            }
+        }
+
         function initializeScene() {
             cards.forEach((card, index) => {
                 const angle = (index / cardCount) * Math.PI * 2 - Math.PI / 2;
@@ -205,37 +259,46 @@ document.addEventListener("DOMContentLoaded", () => {
                 card.rotation.x = -Math.PI / 12;
             });
 
-            const cubeSize = 2;
-            const cubeGeometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
-
-            const cubeTextures = [
-                './images/cube1.png',
-                './images/cube2.png',
-                './images/cube3.png',
-                './images/cube4.png',
-                './images/cube5.png',
-                './images/cube6.png'
-            ];
-
-            const cubeMaterials = cubeTextures.map((textureUrl, index) => {
-                const texture = new THREE.TextureLoader().load(
-                    textureUrl,
-                    () => console.log(`Cube face ${index + 1} texture loaded: ${textureUrl}`),
-                    undefined,
-                    (err) => console.error(`Failed to load cube face ${index + 1} texture: ${textureUrl}`, err)
-                );
-                texture.minFilter = THREE.LinearMipmapLinearFilter;
-                texture.magFilter = THREE.NearestFilter;
-                texture.needsUpdate = true;
-                return new THREE.MeshBasicMaterial({ map: texture });
+            // Create a skybox sphere (large sphere around the scene)
+            const skyboxRadius = 500; // Large enough to encompass the scene
+            const skyboxGeometry = new THREE.SphereGeometry(skyboxRadius, 32, 32);
+            const skyboxMaterial = new THREE.MeshBasicMaterial({
+                side: THREE.BackSide, // Render on the inside of the sphere
+                transparent: true,
+                opacity: 1
             });
+            skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterial);
+            // Rotate the skybox to align the horizon with the camera's view
+            skybox.rotation.x = Math.PI / -3.5; // Align horizon
+            skybox.rotation.y = Math.PI / -7; // Initial Y rotation
+            skybox.userData = { rotationSpeed: 0.001 }; // Add rotation speed for skybox
+            scene.add(skybox);
+            console.log("Skybox added to scene with initial rotation:", skybox.rotation.x, skybox.rotation.y);
 
-            const cube = new THREE.Mesh(cubeGeometry, cubeMaterials);
-            cube.position.set(0, -6.2, 0);
-            scene.add(cube);
-            console.log("WebGL cube with image textures added at position:", cube.position);
+            // Initially apply the solid color background
+            applyBackground(0);
 
-            cube.userData = { rotationSpeed: 0.01 };
+            const sphereRadius = 1.5;
+            const sphereGeometry = new THREE.SphereGeometry(sphereRadius, 32, 32);
+
+            const textureUrl = './images/cube1.png';
+            const texture = new THREE.TextureLoader().load(
+                textureUrl,
+                () => console.log(`Sphere texture loaded: ${textureUrl}`),
+                undefined,
+                (err) => console.error(`Failed to load sphere texture: ${textureUrl}`, err)
+            );
+            texture.minFilter = THREE.LinearMipmapLinearFilter;
+            texture.magFilter = THREE.NearestFilter;
+            texture.needsUpdate = true;
+            const sphereMaterial = new THREE.MeshBasicMaterial({ map: texture });
+
+            sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+            sphere.position.set(0, -6.2, 0);
+            scene.add(sphere);
+            console.log("WebGL sphere with single texture added at position:", sphere.position);
+
+            sphere.userData = { rotationSpeed: 0.005 };
 
             const ambientLight = new THREE.AmbientLight(0x404040);
             scene.add(ambientLight);
@@ -275,8 +338,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     card.rotation.x += 0.0001;
                 });
 
-                cube.rotation.x += cube.userData.rotationSpeed;
-                cube.rotation.y += cube.userData.rotationSpeed;
+                // Rotate the central sphere
+                sphere.rotation.x += sphere.userData.rotationSpeed;
+                sphere.rotation.y += sphere.userData.rotationSpeed;
+
+                // Rotate the skybox slowly around the Y-axis
+                skybox.rotation.y += skybox.userData.rotationSpeed;
 
                 if (controls) controls.update();
                 renderer.render(scene, camera);
@@ -300,10 +367,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const isContactButtonHover = target.closest('#contactbutton') || target.closest('#mobilecontactbutton');
                 const isFormHover = target.closest('#form');
 
-                // Ignore hover events over navigation, contact buttons, or form
                 if (isNavigationHover || isContactButtonHover || isFormHover) {
-                    // Only log when debugging is needed
-                    // console.log("Ignoring hover over element:", { Nav: isNavigationHover, ContactButton: isContactButtonHover, Form: isFormHover });
                     infoDiv.style.display = "none";
                     isHovering = false;
                     canvas.style.cursor = "default";
@@ -313,9 +377,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 mouse.x = (event.clientX / initialWidth) * 2 - 1;
                 mouse.y = -(event.clientY / initialHeight) * 2 + 1;
                 raycaster.setFromCamera(mouse, camera);
-                const intersects = raycaster.intersectObjects(cards);
-                if (intersects.length > 0) {
-                    const card = intersects[0].object;
+
+                // Check for sphere hover first
+                const sphereIntersects = raycaster.intersectObject(sphere);
+                if (sphereIntersects.length > 0) {
+                    console.log("Hovering over sphere");
+                    canvas.style.cursor = "pointer";
+                    return;
+                }
+
+                // Check for card hover
+                const cardIntersects = raycaster.intersectObjects(cards);
+                if (cardIntersects.length > 0) {
+                    const card = cardIntersects[0].object;
                     infoDiv.style.display = "block";
                     infoImage.src = card.userData.project.image;
                     infoText.innerHTML = `<h2>${card.userData.project.title}</h2><p>${card.userData.project.desc}</p>`;
@@ -353,11 +427,23 @@ document.addEventListener("DOMContentLoaded", () => {
                 mouse.x = (clientX / initialWidth) * 2 - 1;
                 mouse.y = -(clientY / initialHeight) * 2 + 1;
                 raycaster.setFromCamera(mouse, camera);
-                const intersects = raycaster.intersectObjects(cards);
-                console.log("Raycaster intersects on click/touch:", intersects.length, intersects);
 
-                if (intersects.length > 0) {
-                    const card = intersects[0].object;
+                // Check for sphere click first
+                const sphereIntersects = raycaster.intersectObject(sphere);
+                if (sphereIntersects.length > 0) {
+                    console.log("Sphere clicked, cycling background...");
+                    backgroundIndex = (backgroundIndex + 1) % backgroundPaths.length;
+                    applyBackground(backgroundIndex);
+                    renderer.render(scene, camera);
+                    return;
+                }
+
+                // Check for card clicks
+                const cardIntersects = raycaster.intersectObjects(cards);
+                console.log("Raycaster intersects on click/touch:", cardIntersects.length, cardIntersects);
+
+                if (cardIntersects.length > 0) {
+                    const card = cardIntersects[0].object;
                     const projectId = card.userData.project.id;
                     console.log("Card clicked with project ID:", projectId);
 

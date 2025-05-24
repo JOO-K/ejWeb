@@ -40,7 +40,7 @@ padding: 0;
     color: white;
     margin: 10px;
     text-align: center;
-    z-index: 10;
+    z-index: 1000000000;
     font-family: ReplicaReg;
     font-size: 14px;
     line-height: 18px;
