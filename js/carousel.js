@@ -1,24 +1,29 @@
 document.addEventListener("DOMContentLoaded", () => {
+    let hasInitialized = false; // Flag to prevent multiple initializations
     const eventTimeout = setTimeout(() => {
         console.warn('"allPartsLoaded" event did not fire within 10 seconds, forcing initialization...');
-        initializeCarousel();
+        if (!hasInitialized) {
+            initializeCarousel();
+        }
     }, 10000);
 
     $(document).on("allPartsLoaded", () => {
         clearTimeout(eventTimeout);
-        initializeCarousel();
+        if (!hasInitialized) {
+            initializeCarousel();
+        }
     });
 
     function initializeCarousel() {
+        if (hasInitialized) {
+            console.warn("Carousel already initialized, skipping...");
+            return;
+        }
+        hasInitialized = true;
         console.log("Initializing 3D carousel...");
 
         if (!window.THREE) {
             console.error("Three.js is not loaded. Please ensure three.min.js is included.");
-            return;
-        }
-
-        if (!window.THREE.GLTFLoader) {
-            console.error("GLTFLoader is not loaded. Please ensure GLTFLoader.js is included before carousel.js.");
             return;
         }
 
@@ -32,15 +37,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const initialWidth = window.innerWidth;
         const initialHeight = window.innerHeight;
-        console.log("Fixing canvas view with initial dimensions:", initialWidth, "x", initialHeight);
 
         const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
         renderer.setSize(initialWidth, initialHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setClearColor(0xe0e0e0, 0);
-        console.log("Renderer clear color set to:", renderer.getClearColor().getHexString());
 
-        // Setup Render Target for Post-Processing
+        // Setup Render Target for Post-Processing (for ASCII effect)
         const renderTarget = new THREE.WebGLRenderTarget(initialWidth, initialHeight, {
             minFilter: THREE.LinearFilter,
             magFilter: THREE.LinearFilter,
@@ -48,7 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
             stencilBuffer: false
         });
 
-        // Custom ASCII-Like Shader with Color and Transparency Support
+        // Custom ASCII-Like Shader with Color and Transparency Support (for backgroundIndex === 2)
         const asciiShaderMaterial = new THREE.ShaderMaterial({
             uniforms: {
                 tDiffuse: { value: renderTarget.texture },
@@ -94,7 +97,7 @@ document.addEventListener("DOMContentLoaded", () => {
             transparent: true
         });
 
-        // Full-screen quad for post-processing
+        // Full-screen quad for post-processing (for ASCII effect)
         const asciiScene = new THREE.Scene();
         const asciiCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
         const asciiQuad = new THREE.Mesh(
@@ -108,7 +111,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (anisotropicExt) {
             const maxAnisotropy = gl.getParameter(anisotropicExt.MAX_TEXTURE_MAX_ANISOTROPY_EXT);
             THREE.Texture.DEFAULT_ANISOTROPY = Math.min(maxAnisotropy, 16);
-            console.log("Anisotropic filtering enabled with level:", THREE.Texture.DEFAULT_ANISOTROPY);
         }
 
         canvas.style.opacity = "0";
@@ -137,7 +139,6 @@ document.addEventListener("DOMContentLoaded", () => {
             controls.maxDistance = 8;
             controls.saveState();
             controls.update();
-            console.log("OrbitControls initialized with all interactive features disabled. Max distance set to:", controls.maxDistance);
         }
 
         function updateCameraSettings() {
@@ -161,7 +162,6 @@ document.addEventListener("DOMContentLoaded", () => {
             if (controls) {
                 controls.target.set(0, controlsTargetY, 0);
                 controls.update();
-                console.log("Camera updated for initial screen width:", initialWidth, "Camera position:", camera.position, "Controls target:", controls.target);
             }
         }
 
@@ -191,7 +191,7 @@ document.addEventListener("DOMContentLoaded", () => {
             console.warn("Texture loading timed out after 10 seconds, forcing initialization...");
             if (loadedTextures < totalTextures) {
                 loadedTextures = totalTextures;
-                loadBirdsAndInitializeScene();
+                initializeScene();
             }
         }, 10000);
 
@@ -202,7 +202,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     project.image,
                     (loadedTexture) => {
                         loadedTextures++;
-                        console.log(`Texture loaded for project ${project.id}, ${loadedTextures}/${totalTextures}`);
                         if (progressIndicator) {
                             progressIndicator.value = (loadedTextures / totalTextures) * 100;
                         }
@@ -230,7 +229,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                         if (loadedTextures === totalTextures) {
                             clearTimeout(textureLoadTimeout);
-                            loadBirdsAndInitializeScene();
+                            initializeScene();
                         }
                     },
                     undefined,
@@ -242,25 +241,27 @@ document.addEventListener("DOMContentLoaded", () => {
                         }
                         if (loadedTextures === totalTextures) {
                             clearTimeout(textureLoadTimeout);
-                            loadBirdsAndInitializeScene();
+                            initializeScene();
                         }
                     }
                 );
                 material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
                 project.materialBasic = material;
                 project.materialPhong = new THREE.MeshPhongMaterial({ map: texture, side: THREE.DoubleSide, flatShading: true });
+                project.materialWireframe = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true, side: THREE.DoubleSide });
             } catch (err) {
                 console.warn(`Texture loading failed for ${project.image}. Using fallback material.`, err);
                 material = new THREE.MeshBasicMaterial({ color: 0x888888, side: THREE.DoubleSide });
                 project.materialBasic = material;
                 project.materialPhong = new THREE.MeshPhongMaterial({ color: 0x888888, side: THREE.DoubleSide, flatShading: true });
+                project.materialWireframe = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true, side: THREE.DoubleSide });
                 loadedTextures++;
                 if (progressIndicator) {
                     progressIndicator.value = (loadedTextures / totalTextures) * 100;
                 }
                 if (loadedTextures === totalTextures) {
                     clearTimeout(textureLoadTimeout);
-                    loadBirdsAndInitializeScene();
+                    initializeScene();
                 }
             }
             const card = new THREE.Mesh(cardGeometry, material);
@@ -275,13 +276,12 @@ document.addEventListener("DOMContentLoaded", () => {
         let skybox;
         let backgroundIndex = 0;
         let pointLight1, pointLight2;
-        let sphereMaterialBasic, sphereMaterialPhong;
-        let skyboxMaterialBasic, skyboxMaterialPhong;
+        let sphereMaterialBasic, sphereMaterialPhong, sphereMaterialWireframe;
+        let skyboxMaterialBasic, skyboxMaterialPhong, skyboxMaterialWireframe;
         const backgroundPaths = [
             null,
-            './images/sky1.jpg',
-            './images/sky3.jpg',
-            './images/sky1.jpg'
+            './images/sky3.jpg', // Wireframe scene
+            './images/sky1.jpg'  // ASCII scene
         ];
         const backgroundTextures = [];
 
@@ -293,7 +293,6 @@ document.addEventListener("DOMContentLoaded", () => {
         context.fillRect(0, 0, solidColorCanvas.width, solidColorCanvas.height);
         const solidColorTexture = new THREE.CanvasTexture(solidColorCanvas);
         solidColorTexture.needsUpdate = true;
-        console.log("Created solid #e0e0e0 texture for initial skybox background");
 
         backgroundPaths.forEach((path, index) => {
             if (index === 0) {
@@ -301,7 +300,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } else if (path) {
                 const texture = new THREE.TextureLoader().load(
                     path,
-                    () => console.log(`Background texture ${index} loaded: ${path}`),
+                    () => {},
                     undefined,
                     (err) => console.error(`Failed to load background texture ${index}: ${path}`, err)
                 );
@@ -310,64 +309,230 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        // Create Birds for backgroundIndex === 2 using GLB model
+        // Create Birds for backgroundIndex === 1 and 2 using Primitive Geometries (Enhanced Inverted W shape with bird-like features)
         const birds = [];
-        const birdCount = 10; // Number of birds
+        const birdCount = 10; // Reduced from 50 to 10 for better performance
 
-        function loadBirdsAndInitializeScene() {
-            const loader = new THREE.GLTFLoader();
-            loader.load(
-                './models/bird.glb',
-                (gltf) => {
-                    console.log("Bird model loaded successfully");
-                    const birdModel = gltf.scene;
+        // Create the bird body (excluding the beak) using ShapeGeometry
+        function createBirdBody() {
+            const shape = new THREE.Shape();
+            const scale = 0.3; // Scale down all dimensions
+            const wingWidth = 0.3 * scale; // Width of each wing
+            const wingHeight = 0.2 * scale; // Height of the wings
+            const bodyWidth = 0.1 * scale; // Width of the body
+            const headSize = 0.05 * scale; // Size of the head
+            const tailLength = 0.1 * scale; // Length of the tail
+            const tailWidth = 0.08 * scale; // Width of the tail
+            const thickness = 0.04 * scale; // Thickness of the shape
 
-                    for (let i = 0; i < birdCount; i++) {
-                        const bird = birdModel.clone();
-                        const angle = (i / birdCount) * Math.PI * 2; // Position birds in a circle
-                        const distance = 1.5; // Distance from the sphere
-                        const height = 1 + Math.random() * 1; // Random height variation
-                        bird.scale.set(0.1, 0.1, 0.1); // Scale the model (adjust as needed)
-                        bird.position.set(
-                            distance * Math.cos(angle),
-                            -6.2 + height, // Adjust height relative to sphere
-                            distance * Math.sin(angle)
-                        );
-                        bird.userData = {
-                            angle: angle,
-                            speed: 0.01 + Math.random() * 0.005, // Speed (0.01 to 0.015)
-                            distance: distance,
-                            height: height
-                        };
-                        bird.visible = false; // Initially hidden
-                        scene.add(bird);
-                        birds.push(bird);
-                    }
-                    initializeScene();
-                },
-                (progress) => {
-                    console.log(`Loading bird model: ${(progress.loaded / progress.total * 100).toFixed(2)}%`);
-                },
-                (error) => {
-                    console.error("Error loading bird model:", error);
-                    // Proceed with scene initialization even if birds fail to load
-                    initializeScene();
-                }
-            );
+            // Start at the left wingtip (bottom left)
+            shape.moveTo(-wingWidth - bodyWidth / 2, -wingHeight);
+            // Curve up to the left wing midpoint
+            shape.quadraticCurveTo(-wingWidth / 2 - bodyWidth / 2, 0, -bodyWidth / 2, -wingHeight / 2);
+            // Dip to the body (middle)
+            shape.lineTo(-bodyWidth / 2, 0);
+            // Rise to the head (top middle)
+            shape.lineTo(-headSize / 2, headSize);
+            // Skip the beak (we'll add it separately)
+            shape.lineTo(0, headSize);
+            shape.lineTo(headSize / 2, headSize);
+            shape.lineTo(bodyWidth / 2, 0);
+            // Curve up to the right wing midpoint
+            shape.quadraticCurveTo(wingWidth / 2 + bodyWidth / 2, 0, wingWidth + bodyWidth / 2, -wingHeight);
+            // Back to the body (right side)
+            shape.lineTo(bodyWidth / 2, 0);
+            // Add the tail (extend backward)
+            shape.lineTo(tailWidth / 2, -tailLength);
+            shape.lineTo(-tailWidth / 2, -tailLength);
+            shape.lineTo(-bodyWidth / 2, 0);
+            // Close the shape
+            shape.lineTo(-wingWidth - bodyWidth / 2, -wingHeight);
+
+            // Extrude the shape to give it some thickness
+            const extrudeSettings = {
+                steps: 1,
+                depth: thickness,
+                bevelEnabled: false
+            };
+            const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+            const material = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide }); // White body
+            const wireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true, side: THREE.DoubleSide });
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.userData = { wireframeMaterial };
+            return mesh;
         }
+
+        // Create the beak as a separate ShapeGeometry
+        function createBirdBeak() {
+            const shape = new THREE.Shape();
+            const scale = 0.5; // Scale down all dimensions by 50%
+            const headSize = 0.05 * scale; // Size of the head (matches the body)
+            const beakLength = 0.01 * scale; // Already 1/3 of original, now scaled down further
+            const beakHeight = headSize / 2; // Height of the beak
+            const thickness = 0.02 * scale; // Thickness of the shape
+
+            // Define the beak as a triangle
+            shape.moveTo(0, headSize); // Base of the beak (center of head)
+            shape.lineTo(beakLength, headSize - beakHeight / 2); // Tip of the beak
+            shape.lineTo(0, headSize - beakHeight); // Bottom of the beak
+            shape.lineTo(0, headSize); // Close the shape
+
+            // Extrude the shape to give it some thickness
+            const extrudeSettings = {
+                steps: 1,
+                depth: thickness,
+                bevelEnabled: false
+            };
+            const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+            const material = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide }); // Yellow beak
+            const wireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true, side: THREE.DoubleSide });
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.userData = { wireframeMaterial };
+            return mesh;
+        }
+
+        // Create the complete bird by combining the body and beak into a group
+        function createBird() {
+            const birdGroup = new THREE.Group();
+            const body = createBirdBody();
+            const beak = createBirdBeak();
+
+            // Add the body and beak to the group
+            birdGroup.add(body);
+            birdGroup.add(beak);
+
+            // Create an HTML element for the bird's coordinates
+            const label = document.createElement('div');
+            label.className = 'bird-label';
+            label.style.position = 'absolute';
+            label.style.color = '#00ff00';
+            label.style.fontFamily = 'monospace';
+            label.style.fontSize = '12px';
+            label.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+            label.style.padding = '2px 5px';
+            label.style.border = '1px solid #00ff00';
+            label.style.display = 'none'; // Initially hidden
+            label.textContent = '(0.0, 0.0, 0.0)';
+            document.body.appendChild(label);
+            birdGroup.userData.label = label;
+
+            return birdGroup;
+        }
+
+        // Ensure birds array is only populated once
+        if (birds.length === 0) {
+            for (let i = 0; i < birdCount; i++) {
+                const bird = createBird();
+                const angle = (i / birdCount) * Math.PI * 2; // Position birds in a circle
+                const distance = 1.5 + Math.random() * 0.5; // Vary distance slightly between 1.5 and 2.0
+                const height = 1 + Math.random() * 1; // Random height variation
+                bird.position.set(
+                    distance * Math.cos(angle),
+                    -6.2 + height, // Adjust height relative to sphere
+                    distance * Math.sin(angle)
+                );
+                bird.userData = {
+                    angle: angle,
+                    speed: 0.01 + Math.random() * 0.005, // Speed (0.01 to 0.015)
+                    distance: distance,
+                    height: height,
+                    flapAngle: Math.random() * Math.PI // Random starting angle for flapping
+                };
+                bird.visible = false; // Initially hidden
+                scene.add(bird);
+                birds.push(bird);
+            }
+        }
+
+        // Create Asteroids for backgroundIndex === 1 (wireframe scene)
+        const asteroids = [];
+        const asteroidCount = 20;
+
+        function createAsteroid() {
+            const geometry = new THREE.IcosahedronGeometry(0.5, 0); // Simple rocky shape
+            const material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+            const asteroid = new THREE.Mesh(geometry, material);
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 5 + Math.random() * 3; // Distance between 5 and 8 units
+            const height = -6.2 + (Math.random() * 4 - 2); // Height between -8.2 and -4.2
+            asteroid.position.set(
+                distance * Math.cos(angle),
+                height,
+                distance * Math.sin(angle)
+            );
+            asteroid.userData = {
+                angle: angle,
+                speed: 0.005 + Math.random() * 0.005,
+                rotationSpeed: new THREE.Vector3(
+                    Math.random() * 0.02 - 0.01,
+                    Math.random() * 0.02 - 0.01,
+                    Math.random() * 0.02 - 0.01
+                )
+            };
+            asteroid.visible = false;
+            scene.add(asteroid);
+            asteroids.push(asteroid);
+        }
+
+        for (let i = 0; i < asteroidCount; i++) {
+            createAsteroid();
+        }
+
+        // Create an HTML element for sphere and skybox rotation values
+        const rotationLabel = document.createElement('div');
+        rotationLabel.className = 'rotation-label';
+        rotationLabel.style.position = 'absolute';
+        rotationLabel.style.color = '#00ff00';
+        rotationLabel.style.fontFamily = 'monospace';
+        rotationLabel.style.fontSize = '12px';
+        rotationLabel.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        rotationLabel.style.padding = '2px 5px';
+        rotationLabel.style.border = '1px solid #00ff00';
+        rotationLabel.style.display = 'none'; // Initially hidden
+        rotationLabel.style.textAlign = 'center';
+        rotationLabel.style.whiteSpace = 'pre-line'; // Allow line breaks
+        rotationLabel.textContent = 'Sphere Rot: (0.00, 0.00, 0.00)\nSkybox Rot: (0.00, 0.00, 0.00)';
+        document.body.appendChild(rotationLabel);
 
         function applyBackground(index) {
             if (backgroundTextures[index]) {
                 skybox.material.map = backgroundTextures[index];
                 skybox.material.needsUpdate = true;
-                if (index === 0) {
-                    console.log("Applied solid #e0e0e0 background");
-                } else {
-                    console.log(`Applied background: ${backgroundPaths[index]}`);
-                }
             }
-            // Toggle lighting and materials based on backgroundIndex
+            // Toggle lighting, materials, effects, and background color based on backgroundIndex
             if (index === 1) {
+                // Remove point lights for normal rendering
+                if (pointLight1) {
+                    scene.remove(pointLight1);
+                    pointLight1 = null;
+                }
+                if (pointLight2) {
+                    scene.remove(pointLight2);
+                    pointLight2 = null;
+                }
+                // Switch to wireframe materials for retro computer effect
+                cards.forEach(card => {
+                    card.material = card.userData.project.materialWireframe;
+                });
+                sphere.material = sphereMaterialWireframe;
+                skybox.material = skyboxMaterialWireframe;
+                // Show birds and asteroids, apply wireframe to birds
+                birds.forEach(bird => {
+                    bird.visible = true;
+                    bird.children.forEach(child => {
+                        child.material = child.userData.wireframeMaterial;
+                    });
+                    // Show the bird's label
+                    if (bird.userData.label) {
+                        bird.userData.label.style.display = 'block';
+                    }
+                });
+                asteroids.forEach(asteroid => asteroid.visible = true);
+                // Show the rotation label
+                rotationLabel.style.display = 'block';
+                // Set background color to very dark grey
+                renderer.setClearColor(0x1a1a1a, 1);
+            } else if (index === 2) {
                 // Add point lights for ASCII effect
                 if (!pointLight1) {
                     pointLight1 = new THREE.PointLight(0xffffff, 3, 0, 0);
@@ -385,26 +550,27 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
                 sphere.material = sphereMaterialPhong;
                 skybox.material = skyboxMaterialBasic;
-                // Hide birds
-                birds.forEach(bird => bird.visible = false);
-            } else if (index === 2) {
-                // Remove point lights for normal rendering
-                if (pointLight1) {
-                    scene.remove(pointLight1);
-                    pointLight1 = null;
-                }
-                if (pointLight2) {
-                    scene.remove(pointLight2);
-                    pointLight2 = null;
-                }
-                // Switch back to MeshBasicMaterial for normal rendering
-                cards.forEach(card => {
-                    card.material = card.userData.project.materialBasic;
+                // Show birds (non-wireframed), hide asteroids
+                birds.forEach(bird => {
+                    bird.visible = true;
+                    bird.children.forEach(child => {
+                        if (child === bird.children[0]) { // Body
+                            child.material = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+                        } else { // Beak
+                            child.material = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide });
+                        }
+                        child.userData.wireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true, side: THREE.DoubleSide });
+                    });
+                    // Hide the bird's label
+                    if (bird.userData.label) {
+                        bird.userData.label.style.display = 'none';
+                    }
                 });
-                sphere.material = sphereMaterialBasic;
-                skybox.material = skyboxMaterialBasic;
-                // Show birds for backgroundIndex === 2
-                birds.forEach(bird => bird.visible = true);
+                asteroids.forEach(asteroid => asteroid.visible = false);
+                // Hide the rotation label
+                rotationLabel.style.display = 'none';
+                // Set background color to light grey
+                renderer.setClearColor(0xe0e0e0, 0);
             } else {
                 // Remove point lights for normal rendering
                 if (pointLight1) {
@@ -421,8 +587,28 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
                 sphere.material = sphereMaterialBasic;
                 skybox.material = skyboxMaterialBasic;
-                // Hide birds
-                birds.forEach(bird => bird.visible = false);
+                // Hide birds and asteroids
+                birds.forEach(bird => {
+                    bird.visible = false;
+                    // Reset bird materials to non-wireframe
+                    bird.children.forEach(child => {
+                        if (child === bird.children[0]) { // Body
+                            child.material = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+                        } else { // Beak
+                            child.material = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide });
+                        }
+                        child.userData.wireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true, side: THREE.DoubleSide });
+                    });
+                    // Hide the bird's label
+                    if (bird.userData.label) {
+                        bird.userData.label.style.display = 'none';
+                    }
+                });
+                asteroids.forEach(asteroid => asteroid.visible = false);
+                // Hide the rotation label
+                rotationLabel.style.display = 'none';
+                // Set background color to light grey
+                renderer.setClearColor(0xe0e0e0, 0);
             }
         }
 
@@ -440,12 +626,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 opacity: 1,
                 flatShading: true
             });
+            skyboxMaterialWireframe = new THREE.MeshBasicMaterial({
+                color: 0x00ff00,
+                wireframe: true,
+                side: THREE.BackSide,
+                transparent: true,
+                opacity: 1
+            });
             skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterialBasic);
             skybox.rotation.x = Math.PI / -3.5;
             skybox.rotation.y = Math.PI / -7;
             skybox.userData = { rotationSpeed: 0.001 };
             scene.add(skybox);
-            console.log("Skybox added to scene with initial rotation:", skybox.rotation.x, skybox.rotation.y);
 
             const sphereRadius = 1.5;
             const sphereGeometry = new THREE.SphereGeometry(sphereRadius, 32, 32);
@@ -453,7 +645,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const textureUrl = './images/cube1.png';
             const texture = new THREE.TextureLoader().load(
                 textureUrl,
-                () => console.log(`Sphere texture loaded: ${textureUrl}`),
+                () => {},
                 undefined,
                 (err) => console.error(`Failed to load sphere texture: ${textureUrl}`, err)
             );
@@ -462,11 +654,11 @@ document.addEventListener("DOMContentLoaded", () => {
             texture.needsUpdate = true;
             sphereMaterialBasic = new THREE.MeshBasicMaterial({ map: texture });
             sphereMaterialPhong = new THREE.MeshPhongMaterial({ map: texture, flatShading: true });
+            sphereMaterialWireframe = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
 
             sphere = new THREE.Mesh(sphereGeometry, sphereMaterialBasic);
             sphere.position.set(0, -6.2, 0);
             scene.add(sphere);
-            console.log("WebGL sphere with single texture added at position:", sphere.position);
 
             sphere.userData = { rotationSpeed: 0.005 };
 
@@ -487,11 +679,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (progressDialog) {
                 progressDialog.style.display = "none";
-                console.log("Progress dialog closed.");
             }
             canvas.style.opacity = "1";
             canvas.style.pointerEvents = "auto";
-            console.log("Canvas faded in and pointer events enabled.");
 
             if (controls) controls.update();
             renderer.render(scene, camera);
@@ -504,6 +694,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 renderTarget.setSize(window.innerWidth, window.innerHeight);
                 renderer.render(scene, camera);
             });
+
+            let frameCounter = 0; // To reduce update frequency
 
             function animate() {
                 requestAnimationFrame(animate);
@@ -531,21 +723,72 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 skybox.rotation.y += skybox.userData.rotationSpeed;
 
-                // Animate birds when backgroundIndex === 2
-                if (backgroundIndex === 2) {
+                // Animate birds when backgroundIndex === 1 or 2
+                if (backgroundIndex === 1 || backgroundIndex === 2) {
                     birds.forEach(bird => {
-                        bird.userData.angle -= bird.userData.speed; // Move counterclockwise
+                        // Circling motion
+                        bird.userData.angle -= bird.userData.speed;
                         const x = bird.userData.distance * Math.cos(bird.userData.angle);
                         const z = bird.userData.distance * Math.sin(bird.userData.angle);
                         bird.position.set(x, -6.2 + bird.userData.height, z);
-                        // Make the bird face its direction of movement (adjusted for counterclockwise motion)
                         bird.lookAt(x + Math.cos(bird.userData.angle - Math.PI / 2), -6.2 + bird.userData.height, z + Math.sin(bird.userData.angle - Math.PI / 2));
+
+                        // Flapping animation
+                        bird.userData.flapAngle += 0.1;
+                        const flap = Math.sin(bird.userData.flapAngle) * 0.2; // Simulate wing flapping
+                        bird.rotation.x = flap; // Rotate the bird to simulate flapping
+                    });
+                }
+
+                // Update HTML labels with bird coordinates and sphere/skybox rotations (only in wireframe scene)
+                if (backgroundIndex === 1) {
+                    frameCounter++;
+                    if (frameCounter % 5 === 0) { // Update every 5 frames to reduce performance impact
+                        birds.forEach(bird => {
+                            if (bird.visible && bird.userData.label) {
+                                // Project bird position to screen space
+                                const vector = bird.position.clone();
+                                vector.project(camera);
+                                const xScreen = (vector.x * 0.5 + 0.5) * window.innerWidth;
+                                const yScreen = (-vector.y * 0.5 + 0.5) * window.innerHeight;
+
+                                // Update label text and position
+                                bird.userData.label.textContent = `(${bird.position.x.toFixed(1)}, ${bird.position.y.toFixed(1)}, ${bird.position.z.toFixed(1)})`;
+                                bird.userData.label.style.left = `${xScreen + 10}px`; // Offset to the right
+                                bird.userData.label.style.top = `${yScreen}px`;
+                            }
+                        });
+
+                        // Update sphere and skybox rotation label
+                        const rotationVector = sphere.position.clone();
+                        rotationVector.y += 1; // Position above the sphere
+                        rotationVector.project(camera);
+                        const xScreen = (rotationVector.x * 0.5 + 0.5) * window.innerWidth;
+                        const yScreen = (-rotationVector.y * 0.5 + 0.5) * window.innerHeight;
+
+                        rotationLabel.textContent = `Sphere Rot: (${sphere.rotation.x.toFixed(2)}, ${sphere.rotation.y.toFixed(2)}, ${sphere.rotation.z.toFixed(2)})\nSkybox Rot: (${skybox.rotation.x.toFixed(2)}, ${skybox.rotation.y.toFixed(2)}, ${skybox.rotation.z.toFixed(2)})`;
+                        rotationLabel.style.left = `${xScreen}px`;
+                        rotationLabel.style.top = `${yScreen - 20}px`; // Center vertically with two lines
+                    }
+                }
+
+                // Animate asteroids when backgroundIndex === 1 (wireframe scene)
+                if (backgroundIndex === 1) {
+                    asteroids.forEach(asteroid => {
+                        asteroid.userData.angle += asteroid.userData.speed;
+                        const x = asteroid.userData.distance * Math.cos(asteroid.userData.angle);
+                        const z = asteroid.userData.distance * Math.sin(asteroid.userData.angle);
+                        asteroid.position.set(x, asteroid.position.y, z);
+                        asteroid.rotation.x += asteroid.userData.rotationSpeed.x;
+                        asteroid.rotation.y += asteroid.userData.rotationSpeed.y;
+                        asteroid.rotation.z += asteroid.userData.rotationSpeed.z;
                     });
                 }
 
                 if (controls) controls.update();
 
-                if (backgroundIndex === 1) {
+                // Apply post-processing for backgroundIndex === 2 (ASCII effect)
+                if (backgroundIndex === 2) {
                     renderer.setRenderTarget(renderTarget);
                     renderer.clear();
                     renderer.render(scene, camera);
@@ -589,7 +832,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const sphereIntersects = raycaster.intersectObject(sphere);
                 if (sphereIntersects.length > 0) {
-                    console.log("Hovering over sphere");
                     canvas.style.cursor = "pointer";
                     return;
                 }
@@ -619,7 +861,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 const isFormClick = target.closest('#form');
 
                 if (isMenuClick || isProjectClick || isNavigationClick || isAboutWrapperClick || isContactButtonClick || isFormClick) {
-                    console.log("Click detected on menu, project, navigation, about-wrapper, contact button, or form, ignoring canvas click. Menu:", isMenuClick, "Project:", isProjectClick, "Navigation:", isNavigationClick, "AboutWrapper:", isAboutWrapperClick, "ContactButton:", isContactButtonClick, "Form:", isFormClick);
                     return;
                 }
 
@@ -637,45 +878,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const sphereIntersects = raycaster.intersectObject(sphere);
                 if (sphereIntersects.length > 0) {
-                    console.log("Sphere clicked, cycling background...");
                     backgroundIndex = (backgroundIndex + 1) % backgroundPaths.length;
                     applyBackground(backgroundIndex);
-                    if (backgroundIndex === 1) {
-                        console.log("ASCII-like effect enabled for background index 1.");
-                    } else {
-                        console.log("ASCII-like effect disabled for background index:", backgroundIndex);
-                    }
                     renderer.render(scene, camera);
                     return;
                 }
 
                 const cardIntersects = raycaster.intersectObjects(cards);
-                console.log("Raycaster intersects on click/touch:", cardIntersects.length, cardIntersects);
-
                 if (cardIntersects.length > 0) {
                     const card = cardIntersects[0].object;
                     const projectId = card.userData.project.id;
-                    console.log("Card clicked with project ID:", projectId);
-
                     const $targetProject = $("#" + projectId);
                     const $menu = $("#menu");
                     const $menu2 = $("#menu2");
                     const $aboutwrapper = $("#about-wrapper");
                     const $hpgraphic = $("#hp-graphic");
 
-                    console.log("Target project found:", $targetProject.length > 0, "ID:", projectId);
-
                     const $projectContainers = $(".project-container");
-                    console.log("Found project containers:", $projectContainers.length, $projectContainers.map((i, el) => el.id).get());
-
                     $projectContainers.css("display", "none");
-                    console.log("Hid all project containers.");
 
                     if ($targetProject.length) {
                         $targetProject.css("display", "flex");
-                        console.log("Showing project:", projectId);
                         canvas.style.pointerEvents = "none";
-                        console.log("Disabled carousel canvas pointer events while project is open.");
                     } else {
                         console.warn("No project found for ID:", projectId);
                     }
@@ -684,38 +908,29 @@ document.addEventListener("DOMContentLoaded", () => {
                     $menu2.css("display", "none");
                     if ($aboutwrapper.length) {
                         $aboutwrapper.css("display", "none");
-                        console.log("Closed about-wrapper.");
                     }
-                    console.log("Menus and about-wrapper closed.");
 
                     if ($hpgraphic.length) {
                         $hpgraphic.css("display", "none");
-                        console.log("Hid homepage graphic.");
                     } else {
                         console.warn("Homepage graphic not found.");
                     }
 
                     $("#mainToggle, #researchToggle, #aboutToggle").css("color", "black");
-                    console.log("Reset all toggle colors to black.");
-
                     window.scrollTo({ top: 0, behavior: "smooth" });
-                    console.log("Scrolled to top.");
                 }
             }
 
             document.getElementById('contactbutton')?.addEventListener('click', (event) => {
                 event.stopPropagation();
-                console.log("Click on contactbutton stopped propagation.");
             });
 
             document.getElementById('mobilecontactbutton')?.addEventListener('click', (event) => {
                 event.stopPropagation();
-                console.log("Click on mobilecontactbutton stopped propagation.");
             });
 
             document.getElementById('form')?.addEventListener('click', (event) => {
                 event.stopPropagation();
-                console.log("Click on form stopped propagation.");
             });
 
             window.addEventListener("click", onClick);
