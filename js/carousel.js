@@ -163,6 +163,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 controls.target.set(0, controlsTargetY, 0);
                 controls.update();
             }
+
+            // Debug: Log camera details
+            console.log("Camera position:", camera.position);
+            console.log("Camera projection matrix:", camera.projectionMatrix.elements);
+            console.log("Camera matrix world inverse:", camera.matrixWorldInverse.elements);
         }
 
         updateCameraSettings();
@@ -275,6 +280,7 @@ document.addEventListener("DOMContentLoaded", () => {
         let sphere;
         let skybox;
         let backgroundIndex = 0;
+        let previousBackgroundIndex = 0; // Track the previous index for transition logic
         let pointLight1, pointLight2;
         let sphereMaterialBasic, sphereMaterialPhong, sphereMaterialWireframe;
         let skyboxMaterialBasic, skyboxMaterialPhong, skyboxMaterialWireframe;
@@ -289,8 +295,12 @@ document.addEventListener("DOMContentLoaded", () => {
         solidColorCanvas.width = 512;
         solidColorCanvas.height = 512;
         const context = solidColorCanvas.getContext('2d');
-        context.fillStyle = '#e0e0e0';
-        context.fillRect(0, 0, solidColorCanvas.width, solidColorCanvas.height);
+        if (context) {
+            context.fillStyle = '#e0e0e0';
+            context.fillRect(0, 0, solidColorCanvas.width, solidColorCanvas.height);
+        } else {
+            console.error("Failed to get 2D context for solidColorCanvas");
+        }
         const solidColorTexture = new THREE.CanvasTexture(solidColorCanvas);
         solidColorTexture.needsUpdate = true;
 
@@ -300,7 +310,9 @@ document.addEventListener("DOMContentLoaded", () => {
             } else if (path) {
                 const texture = new THREE.TextureLoader().load(
                     path,
-                    () => {},
+                    () => {
+                        console.log(`Loaded background texture ${index}: ${path}`);
+                    },
                     undefined,
                     (err) => console.error(`Failed to load background texture ${index}: ${path}`, err)
                 );
@@ -392,7 +404,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // Create the complete bird by combining the body and beak into a group
-        function createBird() {
+        function createBird(index) {
             const birdGroup = new THREE.Group();
             const body = createBirdBody();
             const beak = createBirdBeak();
@@ -401,20 +413,29 @@ document.addEventListener("DOMContentLoaded", () => {
             birdGroup.add(body);
             birdGroup.add(beak);
 
+            // Ensure userData is initialized
+            birdGroup.userData = birdGroup.userData || {};
+
             // Create an HTML element for the bird's coordinates
             const label = document.createElement('div');
-            label.className = 'bird-label';
+            label.className = 'bird-coord-label bird-label-' + index; // Unique class for specificity
             label.style.position = 'absolute';
             label.style.color = '#00ff00';
             label.style.fontFamily = 'monospace';
-            label.style.fontSize = '12px';
+            label.style.fontSize = isMobile ? '6px' : '12px'; // Half size on mobile (12px to 6px)
             label.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
             label.style.padding = '2px 5px';
             label.style.border = '1px solid #00ff00';
-            label.style.display = 'none'; // Initially hidden
-            label.textContent = '(0.0, 0.0, 0.0)';
+            label.style.display = 'none !important';
+            label.style.opacity = '1 !important';
+            label.style.visibility = 'visible !important';
+            label.style.zIndex = '500'; // Inline zIndex: above canvas (1), below project containers (1009)
+            label.style.textAlign = 'center';
+            label.style.pointerEvents = 'none'; // Prevent interaction
+            label.textContent = `Bird ${index} Pos: (0.0, 0.0, 0.0)`;
             document.body.appendChild(label);
             birdGroup.userData.label = label;
+            console.log(`Created label for Bird ${index} with z-index: ${label.style.zIndex}, font-size: ${label.style.fontSize}`);
 
             return birdGroup;
         }
@@ -422,7 +443,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Ensure birds array is only populated once
         if (birds.length === 0) {
             for (let i = 0; i < birdCount; i++) {
-                const bird = createBird();
+                const bird = createBird(i);
                 const angle = (i / birdCount) * Math.PI * 2; // Position birds in a circle
                 const distance = 1.5 + Math.random() * 0.5; // Vary distance slightly between 1.5 and 2.0
                 const height = 1 + Math.random() * 1; // Random height variation
@@ -436,13 +457,40 @@ document.addEventListener("DOMContentLoaded", () => {
                     speed: 0.01 + Math.random() * 0.005, // Speed (0.01 to 0.015)
                     distance: distance,
                     height: height,
-                    flapAngle: Math.random() * Math.PI // Random starting angle for flapping
+                    flapAngle: Math.random() * Math.PI, // Random starting angle for flapping
+                    label: bird.userData.label // Explicitly copy the label to the top-level userData
                 };
                 bird.visible = false; // Initially hidden
                 scene.add(bird);
                 birds.push(bird);
+                console.log(`Bird ${i} label assigned:`, !!bird.userData.label);
             }
+            console.log("Total birds created:", birds.length);
+            // Debug: Verify labels are attached
+            birds.forEach((bird, index) => {
+                console.log(`Bird ${index} has label after creation:`, !!bird.userData.label);
+            });
         }
+
+        // Create a test label to confirm DOM rendering
+        const testLabel = document.createElement('div');
+        testLabel.className = 'test-label';
+        testLabel.style.position = 'absolute';
+        testLabel.style.left = '10px';
+        testLabel.style.top = '10px';
+        testLabel.style.color = '#ff0000';
+        testLabel.style.fontFamily = 'monospace';
+        testLabel.style.fontSize = isMobile ? '7px' : '14px'; // Half size on mobile (14px to 7px)
+        testLabel.style.backgroundColor = 'rgba(255, 255, 255, 0.5)';
+        testLabel.style.padding = '2px 5px';
+        testLabel.style.border = '1px solid #ff0000';
+        testLabel.style.zIndex = '500'; // Inline zIndex: match bird labels
+        testLabel.style.display = 'block !important';
+        testLabel.style.visibility = 'visible !important';
+        testLabel.style.opacity = '1 !important';
+        testLabel.textContent = 'Test Label';
+        document.body.appendChild(testLabel);
+        console.log("Test label created at top-left corner with z-index:", testLabel.style.zIndex, "font-size:", testLabel.style.fontSize);
 
         // Create Asteroids for backgroundIndex === 1 (wireframe scene)
         const asteroids = [];
@@ -484,15 +532,93 @@ document.addEventListener("DOMContentLoaded", () => {
         rotationLabel.style.position = 'absolute';
         rotationLabel.style.color = '#00ff00';
         rotationLabel.style.fontFamily = 'monospace';
-        rotationLabel.style.fontSize = '12px';
+        rotationLabel.style.fontSize = isMobile ? '6px' : '12px'; // Half size on mobile (12px to 6px)
         rotationLabel.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
         rotationLabel.style.padding = '2px 5px';
         rotationLabel.style.border = '1px solid #00ff00';
         rotationLabel.style.display = 'none'; // Initially hidden
         rotationLabel.style.textAlign = 'center';
         rotationLabel.style.whiteSpace = 'pre-line'; // Allow line breaks
+        rotationLabel.style.zIndex = '500'; // Inline zIndex: match bird labels
         rotationLabel.textContent = 'Sphere Rot: (0.00, 0.00, 0.00)\nSkybox Rot: (0.00, 0.00, 0.00)';
         document.body.appendChild(rotationLabel);
+
+        // Helper function to hide all labels
+        function hideAllLabels(source) {
+            rotationLabel.style.setProperty('display', 'none', 'important');
+            rotationLabel.style.setProperty('visibility', 'hidden', 'important');
+            rotationLabel.style.setProperty('opacity', '0', 'important');
+            console.log(`Rotation label hidden (${source}), display:`, rotationLabel.style.display);
+            const computedStyleRot = window.getComputedStyle(rotationLabel);
+            console.log(`Rotation label computed display (${source}):`, computedStyleRot.display);
+            console.log(`Rotation label computed visibility (${source}):`, computedStyleRot.visibility);
+            console.log(`Rotation label computed opacity (${source}):`, computedStyleRot.opacity);
+            console.log(`Rotation label computed z-index (${source}):`, computedStyleRot.zIndex);
+            // Debug: Log parent element styles
+            const parentRot = rotationLabel.parentElement;
+            if (parentRot) {
+                const parentStyleRot = window.getComputedStyle(parentRot);
+                console.log(`Rotation label parent computed display (${source}):`, parentStyleRot.display);
+                console.log(`Rotation label parent computed visibility (${source}):`, parentStyleRot.visibility);
+                console.log(`Rotation label parent computed opacity (${source}):`, parentStyleRot.opacity);
+                console.log(`Rotation label parent computed z-index (${source}):`, parentStyleRot.zIndex);
+            }
+
+            birds.forEach(bird => {
+                if (bird.userData.label) {
+                    bird.userData.label.style.setProperty('display', 'none', 'important');
+                    bird.userData.label.style.setProperty('visibility', 'hidden', 'important');
+                    bird.userData.label.style.setProperty('opacity', '0', 'important');
+                    console.log(`Bird ${birds.indexOf(bird)} label hidden (${source}), display:`, bird.userData.label.style.display);
+                    const computedStyleBird = window.getComputedStyle(bird.userData.label);
+                    console.log(`Bird ${birds.indexOf(bird)} label computed display (${source}):`, computedStyleBird.display);
+                    console.log(`Bird ${birds.indexOf(bird)} label computed visibility (${source}):`, computedStyleBird.visibility);
+                    console.log(`Bird ${birds.indexOf(bird)} label computed opacity (${source}):`, computedStyleBird.opacity);
+                    console.log(`Bird ${birds.indexOf(bird)} label computed z-index (${source}):`, computedStyleBird.zIndex);
+                    // Debug: Log parent element styles
+                    const parentBird = bird.userData.label.parentElement;
+                    if (parentBird) {
+                        const parentStyleBird = window.getComputedStyle(parentBird);
+                        console.log(`Bird ${birds.indexOf(bird)} label parent computed display (${source}):`, parentStyleBird.display);
+                        console.log(`Bird ${birds.indexOf(bird)} label parent computed visibility (${source}):`, parentStyleBird.visibility);
+                        console.log(`Bird ${birds.indexOf(bird)} label parent computed opacity (${source}):`, parentStyleBird.opacity);
+                        console.log(`Bird ${birds.indexOf(bird)} label parent computed z-index (${source}):`, parentStyleBird.zIndex);
+                    }
+                }
+            });
+
+            // Hide the test label as well
+            testLabel.style.setProperty('display', 'none', 'important');
+            testLabel.style.setProperty('visibility', 'hidden', 'important');
+            testLabel.style.setProperty('opacity', '0', 'important');
+            console.log(`Test label hidden (${source}), display:`, testLabel.style.display);
+        }
+
+        // Helper function to show labels (for debugging)
+        function showAllLabels(source) {
+            rotationLabel.style.setProperty('display', 'block', 'important');
+            rotationLabel.style.setProperty('visibility', 'visible', 'important');
+            rotationLabel.style.setProperty('opacity', '1', 'important');
+            console.log(`Rotation label shown (${source}), display:`, rotationLabel.style.display);
+
+            birds.forEach(bird => {
+                if (bird.userData.label) {
+                    bird.userData.label.style.setProperty('display', 'block', 'important');
+                    bird.userData.label.style.setProperty('visibility', 'visible', 'important');
+                    bird.userData.label.style.setProperty('opacity', '1', 'important');
+                    console.log(`Bird ${birds.indexOf(bird)} label shown (${source}), display:`, bird.userData.label.style.display);
+                }
+            });
+
+            testLabel.style.setProperty('display', 'block', 'important');
+            testLabel.style.setProperty('visibility', 'visible', 'important');
+            testLabel.style.setProperty('opacity', '1', 'important');
+            console.log(`Test label shown (${source}), display:`, testLabel.style.display);
+        }
+
+        // Expose hideAllLabels and showAllLabels globally for menu.js to use
+        window.hideAllLabels = hideAllLabels;
+        window.showAllLabels = showAllLabels;
 
         function applyBackground(index) {
             if (backgroundTextures[index]) {
@@ -524,12 +650,37 @@ document.addEventListener("DOMContentLoaded", () => {
                     });
                     // Show the bird's label
                     if (bird.userData.label) {
-                        bird.userData.label.style.display = 'block';
+                        bird.userData.label.style.setProperty('display', 'block', 'important');
+                        bird.userData.label.style.setProperty('visibility', 'visible', 'important');
+                        bird.userData.label.style.setProperty('opacity', '1', 'important');
+                        console.log(`Bird ${birds.indexOf(bird)} label set to visible (wireframe scene), display:`, bird.userData.label.style.display);
+                        // Debug: Log computed style
+                        const computedStyle = window.getComputedStyle(bird.userData.label);
+                        console.log(`Bird ${birds.indexOf(bird)} label computed display (wireframe scene):`, computedStyle.display);
+                        console.log(`Bird ${birds.indexOf(bird)} label computed visibility (wireframe scene):`, computedStyle.visibility);
+                        console.log(`Bird ${birds.indexOf(bird)} label computed opacity (wireframe scene):`, computedStyle.opacity);
+                        console.log(`Bird ${birds.indexOf(bird)} label computed z-index (wireframe scene):`, computedStyle.zIndex);
                     }
+                    console.log(`Bird ${birds.indexOf(bird)} set to visible: ${bird.visible}`);
                 });
-                asteroids.forEach(asteroid => asteroid.visible = true);
+                asteroids.forEach(asteroid => {
+                    asteroid.visible = true;
+                    console.log(`Asteroid set to visible: ${asteroid.visible}`);
+                });
                 // Show the rotation label
-                rotationLabel.style.display = 'block';
+                rotationLabel.style.setProperty('display', 'block', 'important');
+                rotationLabel.style.setProperty('visibility', 'visible', 'important');
+                rotationLabel.style.setProperty('opacity', '1', 'important');
+                console.log("Rotation label shown (wireframe scene), display:", rotationLabel.style.display);
+                const computedStyleRot = window.getComputedStyle(rotationLabel);
+                console.log("Rotation label computed display (wireframe scene):", computedStyleRot.display);
+                console.log("Rotation label computed visibility (wireframe scene):", computedStyleRot.visibility);
+                console.log("Rotation label computed opacity (wireframe scene):", computedStyleRot.opacity);
+                console.log("Rotation label computed z-index (wireframe scene):", computedStyleRot.zIndex);
+                // Show the test label
+                testLabel.style.setProperty('display', 'block', 'important');
+                testLabel.style.setProperty('visibility', 'visible', 'important');
+                testLabel.style.setProperty('opacity', '1', 'important');
                 // Set background color to very dark grey
                 renderer.setClearColor(0x1a1a1a, 1);
             } else if (index === 2) {
@@ -561,14 +712,14 @@ document.addEventListener("DOMContentLoaded", () => {
                         }
                         child.userData.wireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true, side: THREE.DoubleSide });
                     });
-                    // Hide the bird's label
-                    if (bird.userData.label) {
-                        bird.userData.label.style.display = 'none';
-                    }
+                    console.log(`Bird ${birds.indexOf(bird)} set to visible (ASCII): ${bird.visible}`);
                 });
-                asteroids.forEach(asteroid => asteroid.visible = false);
-                // Hide the rotation label
-                rotationLabel.style.display = 'none';
+                asteroids.forEach(asteroid => {
+                    asteroid.visible = false;
+                    console.log(`Asteroid set to visible: ${asteroid.visible}`);
+                });
+                // Hide all labels
+                hideAllLabels("ASCII scene");
                 // Set background color to light grey
                 renderer.setClearColor(0xe0e0e0, 0);
             } else {
@@ -599,14 +750,14 @@ document.addEventListener("DOMContentLoaded", () => {
                         }
                         child.userData.wireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true, side: THREE.DoubleSide });
                     });
-                    // Hide the bird's label
-                    if (bird.userData.label) {
-                        bird.userData.label.style.display = 'none';
-                    }
+                    console.log(`Bird ${birds.indexOf(bird)} set to visible (default): ${bird.visible}`);
                 });
-                asteroids.forEach(asteroid => asteroid.visible = false);
-                // Hide the rotation label
-                rotationLabel.style.display = 'none';
+                asteroids.forEach(asteroid => {
+                    asteroid.visible = false;
+                    console.log(`Asteroid set to visible: ${asteroid.visible}`);
+                });
+                // Hide all labels
+                hideAllLabels("default scene");
                 // Set background color to light grey
                 renderer.setClearColor(0xe0e0e0, 0);
             }
@@ -645,13 +796,19 @@ document.addEventListener("DOMContentLoaded", () => {
             const textureUrl = './images/cube1.png';
             const texture = new THREE.TextureLoader().load(
                 textureUrl,
-                () => {},
+                () => {
+                    console.log("Loaded sphere texture:", textureUrl);
+                    texture.needsUpdate = true;
+                },
                 undefined,
-                (err) => console.error(`Failed to load sphere texture: ${textureUrl}`, err)
+                (err) => {
+                    console.error(`Failed to load sphere texture: ${textureUrl}`, err);
+                    // Fallback to a basic material if texture fails
+                    sphereMaterialBasic = new THREE.MeshBasicMaterial({ color: 0x888888 });
+                }
             );
             texture.minFilter = THREE.LinearMipmapLinearFilter;
             texture.magFilter = THREE.NearestFilter;
-            texture.needsUpdate = true;
             sphereMaterialBasic = new THREE.MeshBasicMaterial({ map: texture });
             sphereMaterialPhong = new THREE.MeshPhongMaterial({ map: texture, flatShading: true });
             sphereMaterialWireframe = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
@@ -695,7 +852,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 renderer.render(scene, camera);
             });
 
-            let frameCounter = 0; // To reduce update frequency
+            let frameCounter = 0; // To reduce update frequency for other elements
 
             function animate() {
                 requestAnimationFrame(animate);
@@ -740,36 +897,55 @@ document.addEventListener("DOMContentLoaded", () => {
                     });
                 }
 
-                // Update HTML labels with bird coordinates and sphere/skybox rotations (only in wireframe scene)
+                // Update HTML labels with sphere/skybox rotations and bird coordinates (only in wireframe scene)
                 if (backgroundIndex === 1) {
                     frameCounter++;
-                    if (frameCounter % 5 === 0) { // Update every 5 frames to reduce performance impact
-                        birds.forEach(bird => {
-                            if (bird.visible && bird.userData.label) {
+                    // Update sphere and skybox rotation label every 10 frames
+                    if (frameCounter % 10 === 0) {
+                        const rotationVector = sphere.position.clone();
+                        rotationVector.y += 1; // Position above the sphere
+                        rotationVector.project(camera);
+                        const xScreenRot = (rotationVector.x * 0.5 + 0.5) * window.innerWidth;
+                        const yScreenRot = (-rotationVector.y * 0.5 + 0.5) * window.innerHeight;
+
+                        rotationLabel.textContent = `Sphere Rot: (${sphere.rotation.x.toFixed(2)}, ${sphere.rotation.y.toFixed(2)}, ${sphere.rotation.z.toFixed(2)})\nSkybox Rot: (${skybox.rotation.x.toFixed(2)}, ${skybox.rotation.y.toFixed(2)}, ${skybox.rotation.z.toFixed(2)})`;
+                        rotationLabel.style.left = `${xScreenRot}px`;
+                        rotationLabel.style.top = `${yScreenRot - 20}px`; // Center vertically with two lines
+                    }
+
+                    // Update bird coordinate labels every frame to reduce jitter
+                    birds.forEach((bird, index) => {
+                        if (bird.visible && bird.userData.label) {
+                            const computedStyle = window.getComputedStyle(bird.userData.label);
+                            if (computedStyle.display !== 'none') {
                                 // Project bird position to screen space
                                 const vector = bird.position.clone();
+                                vector.y += 0.2; // Slight offset above the bird
                                 vector.project(camera);
                                 const xScreen = (vector.x * 0.5 + 0.5) * window.innerWidth;
                                 const yScreen = (-vector.y * 0.5 + 0.5) * window.innerHeight;
 
                                 // Update label text and position
-                                bird.userData.label.textContent = `(${bird.position.x.toFixed(1)}, ${bird.position.y.toFixed(1)}, ${bird.position.z.toFixed(1)})`;
-                                bird.userData.label.style.left = `${xScreen + 10}px`; // Offset to the right
+                                bird.userData.label.textContent = `Bird ${index} Pos: (${bird.position.x.toFixed(1)}, ${bird.position.y.toFixed(1)}, ${bird.position.z.toFixed(1)})`;
+                                bird.userData.label.style.left = `${xScreen + 10}px`; // Offset to the right to avoid overlap
                                 bird.userData.label.style.top = `${yScreen}px`;
+
+                                // Debug: Log position and viewport bounds (only every 10 frames to reduce log spam)
+                                if (frameCounter % 10 === 0) {
+                                    console.log(`Bird ${index} 3D position: (${bird.position.x.toFixed(1)}, ${bird.position.y.toFixed(1)}, ${bird.position.z.toFixed(1)})`);
+                                    console.log(`Bird ${index} label position updated: left=${xScreen + 10}px, top=${yScreen}px`);
+                                    console.log(`Viewport: width=${window.innerWidth}px, height=${window.innerHeight}px`);
+                                    // Debug: Log computed style
+                                    console.log(`Bird ${index} label computed display:`, computedStyle.display);
+                                    console.log(`Bird ${index} label computed visibility:`, computedStyle.visibility);
+                                    console.log(`Bird ${index} label computed opacity:`, computedStyle.opacity);
+                                    console.log(`Bird ${index} label computed z-index:`, computedStyle.zIndex);
+                                }
                             }
-                        });
-
-                        // Update sphere and skybox rotation label
-                        const rotationVector = sphere.position.clone();
-                        rotationVector.y += 1; // Position above the sphere
-                        rotationVector.project(camera);
-                        const xScreen = (rotationVector.x * 0.5 + 0.5) * window.innerWidth;
-                        const yScreen = (-rotationVector.y * 0.5 + 0.5) * window.innerHeight;
-
-                        rotationLabel.textContent = `Sphere Rot: (${sphere.rotation.x.toFixed(2)}, ${sphere.rotation.y.toFixed(2)}, ${sphere.rotation.z.toFixed(2)})\nSkybox Rot: (${skybox.rotation.x.toFixed(2)}, ${skybox.rotation.y.toFixed(2)}, ${skybox.rotation.z.toFixed(2)})`;
-                        rotationLabel.style.left = `${xScreen}px`;
-                        rotationLabel.style.top = `${yScreen - 20}px`; // Center vertically with two lines
-                    }
+                        } else {
+                            console.warn(`Bird ${index} label missing or bird not visible:`, bird.visible, !!bird.userData.label);
+                        }
+                    });
                 }
 
                 // Animate asteroids when backgroundIndex === 1 (wireframe scene)
@@ -878,8 +1054,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const sphereIntersects = raycaster.intersectObject(sphere);
                 if (sphereIntersects.length > 0) {
+                    previousBackgroundIndex = backgroundIndex; // Store the current index
                     backgroundIndex = (backgroundIndex + 1) % backgroundPaths.length;
+                    console.log("Previous backgroundIndex before sphere click:", previousBackgroundIndex);
+                    console.log("New backgroundIndex after sphere click:", backgroundIndex);
                     applyBackground(backgroundIndex);
+                    // Hide labels if transitioning away from the wireframe scene
+                    if (previousBackgroundIndex === 1 && backgroundIndex !== 1) {
+                        hideAllLabels("sphere click - transition away from wireframe");
+                    }
                     renderer.render(scene, camera);
                     return;
                 }
@@ -900,6 +1083,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     if ($targetProject.length) {
                         $targetProject.css("display", "flex");
                         canvas.style.pointerEvents = "none";
+                        // Hide all labels when navigating to the projects page
+                        hideAllLabels("project page navigation");
+                        console.log("Navigated to projects page, hiding rotation label and bird coordinate labels");
                     } else {
                         console.warn("No project found for ID:", projectId);
                     }
