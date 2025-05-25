@@ -17,6 +17,11 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
+        if (!window.THREE.GLTFLoader) {
+            console.error("GLTFLoader is not loaded. Please ensure GLTFLoader.js is included before carousel.js.");
+            return;
+        }
+
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const canvas = document.getElementById("carouselCanvas");
@@ -29,11 +34,74 @@ document.addEventListener("DOMContentLoaded", () => {
         const initialHeight = window.innerHeight;
         console.log("Fixing canvas view with initial dimensions:", initialWidth, "x", initialHeight);
 
-        const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
         renderer.setSize(initialWidth, initialHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.setClearColor(0xe0e0e0); // Set renderer clear color to #e0e0e0
+        renderer.setClearColor(0xe0e0e0, 0);
         console.log("Renderer clear color set to:", renderer.getClearColor().getHexString());
+
+        // Setup Render Target for Post-Processing
+        const renderTarget = new THREE.WebGLRenderTarget(initialWidth, initialHeight, {
+            minFilter: THREE.LinearFilter,
+            magFilter: THREE.LinearFilter,
+            format: THREE.RGBAFormat,
+            stencilBuffer: false
+        });
+
+        // Custom ASCII-Like Shader with Color and Transparency Support
+        const asciiShaderMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+                tDiffuse: { value: renderTarget.texture },
+                resolution: { value: new THREE.Vector2(initialWidth, initialHeight) },
+                charSize: { value: 15.0 } // Controls the size of the "characters"
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform sampler2D tDiffuse;
+                uniform vec2 resolution;
+                uniform float charSize;
+                varying vec2 vUv;
+
+                void main() {
+                    vec2 pixelSize = charSize / resolution;
+                    vec2 cell = floor(vUv / pixelSize) * pixelSize;
+                    vec2 cellUv = fract(vUv / pixelSize);
+
+                    // Sample the scene texture
+                    vec4 color = texture2D(tDiffuse, cell);
+
+                    // Discard fully transparent pixels to preserve the background
+                    if (color.a < 0.01) {
+                        discard;
+                    }
+
+                    // Quantize each color channel separately to preserve colors
+                    vec3 asciiColor = floor(color.rgb * 5.0) / 5.0; // Quantize into 5 levels per channel
+
+                    // Add a simple grid-like pattern to simulate character boundaries
+                    float edge = step(0.9, max(cellUv.x, cellUv.y));
+                    asciiColor *= (1.0 - edge);
+
+                    gl_FragColor = vec4(asciiColor, color.a);
+                }
+            `,
+            transparent: true
+        });
+
+        // Full-screen quad for post-processing
+        const asciiScene = new THREE.Scene();
+        const asciiCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+        const asciiQuad = new THREE.Mesh(
+            new THREE.PlaneGeometry(2, 2),
+            asciiShaderMaterial
+        );
+        asciiScene.add(asciiQuad);
 
         const gl = renderer.getContext();
         const anisotropicExt = gl.getExtension('EXT_texture_filter_anisotropic') || gl.getExtension('WEBKIT_EXT_texture_filter_anisotropic');
@@ -46,7 +114,6 @@ document.addEventListener("DOMContentLoaded", () => {
         canvas.style.opacity = "0";
         canvas.style.transition = "opacity 1s ease-in";
         canvas.style.pointerEvents = "none";
-        // Set a fallback background color for the canvas
         canvas.style.backgroundColor = "#e0e0e0";
 
         const progressDialog = document.getElementById("progress-dialog");
@@ -124,7 +191,7 @@ document.addEventListener("DOMContentLoaded", () => {
             console.warn("Texture loading timed out after 10 seconds, forcing initialization...");
             if (loadedTextures < totalTextures) {
                 loadedTextures = totalTextures;
-                initializeScene();
+                loadBirdsAndInitializeScene();
             }
         }, 10000);
 
@@ -163,7 +230,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                         if (loadedTextures === totalTextures) {
                             clearTimeout(textureLoadTimeout);
-                            initializeScene();
+                            loadBirdsAndInitializeScene();
                         }
                     },
                     undefined,
@@ -175,21 +242,25 @@ document.addEventListener("DOMContentLoaded", () => {
                         }
                         if (loadedTextures === totalTextures) {
                             clearTimeout(textureLoadTimeout);
-                            initializeScene();
+                            loadBirdsAndInitializeScene();
                         }
                     }
                 );
-                material = new THREE.MeshBasicMaterial({ color: 0xffffff, map: texture, side: THREE.DoubleSide });
+                material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+                project.materialBasic = material;
+                project.materialPhong = new THREE.MeshPhongMaterial({ map: texture, side: THREE.DoubleSide, flatShading: true });
             } catch (err) {
                 console.warn(`Texture loading failed for ${project.image}. Using fallback material.`, err);
                 material = new THREE.MeshBasicMaterial({ color: 0x888888, side: THREE.DoubleSide });
+                project.materialBasic = material;
+                project.materialPhong = new THREE.MeshPhongMaterial({ color: 0x888888, side: THREE.DoubleSide, flatShading: true });
                 loadedTextures++;
                 if (progressIndicator) {
                     progressIndicator.value = (loadedTextures / totalTextures) * 100;
                 }
                 if (loadedTextures === totalTextures) {
                     clearTimeout(textureLoadTimeout);
-                    initializeScene();
+                    loadBirdsAndInitializeScene();
                 }
             }
             const card = new THREE.Mesh(cardGeometry, material);
@@ -202,16 +273,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
         let sphere;
         let skybox;
-        let backgroundIndex = 0; // Track the current background state (0 = solid color, 1-3 = skybox textures)
+        let backgroundIndex = 0;
+        let pointLight1, pointLight2;
+        let sphereMaterialBasic, sphereMaterialPhong;
+        let skyboxMaterialBasic, skyboxMaterialPhong;
         const backgroundPaths = [
-            null, // Will be replaced with a solid color texture
+            null,
+            './images/sky1.jpg',
             './images/sky3.jpg',
-            './images/sky2.jpg',
             './images/sky1.jpg'
         ];
         const backgroundTextures = [];
 
-        // Create a solid #e0e0e0 texture for the initial background
         const solidColorCanvas = document.createElement('canvas');
         solidColorCanvas.width = 512;
         solidColorCanvas.height = 512;
@@ -222,10 +295,8 @@ document.addEventListener("DOMContentLoaded", () => {
         solidColorTexture.needsUpdate = true;
         console.log("Created solid #e0e0e0 texture for initial skybox background");
 
-        // Preload background textures
         backgroundPaths.forEach((path, index) => {
             if (index === 0) {
-                // Use the solid color texture for the first background
                 backgroundTextures[index] = solidColorTexture;
             } else if (path) {
                 const texture = new THREE.TextureLoader().load(
@@ -239,6 +310,52 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
+        // Create Birds for backgroundIndex === 2 using GLB model
+        const birds = [];
+        const birdCount = 10; // Number of birds
+
+        function loadBirdsAndInitializeScene() {
+            const loader = new THREE.GLTFLoader();
+            loader.load(
+                './models/bird.glb',
+                (gltf) => {
+                    console.log("Bird model loaded successfully");
+                    const birdModel = gltf.scene;
+
+                    for (let i = 0; i < birdCount; i++) {
+                        const bird = birdModel.clone();
+                        const angle = (i / birdCount) * Math.PI * 2; // Position birds in a circle
+                        const distance = 1.5; // Distance from the sphere
+                        const height = 1 + Math.random() * 1; // Random height variation
+                        bird.scale.set(0.1, 0.1, 0.1); // Scale the model (adjust as needed)
+                        bird.position.set(
+                            distance * Math.cos(angle),
+                            -6.2 + height, // Adjust height relative to sphere
+                            distance * Math.sin(angle)
+                        );
+                        bird.userData = {
+                            angle: angle,
+                            speed: 0.01 + Math.random() * 0.005, // Speed (0.01 to 0.015)
+                            distance: distance,
+                            height: height
+                        };
+                        bird.visible = false; // Initially hidden
+                        scene.add(bird);
+                        birds.push(bird);
+                    }
+                    initializeScene();
+                },
+                (progress) => {
+                    console.log(`Loading bird model: ${(progress.loaded / progress.total * 100).toFixed(2)}%`);
+                },
+                (error) => {
+                    console.error("Error loading bird model:", error);
+                    // Proceed with scene initialization even if birds fail to load
+                    initializeScene();
+                }
+            );
+        }
+
         function applyBackground(index) {
             if (backgroundTextures[index]) {
                 skybox.material.map = backgroundTextures[index];
@@ -249,34 +366,86 @@ document.addEventListener("DOMContentLoaded", () => {
                     console.log(`Applied background: ${backgroundPaths[index]}`);
                 }
             }
+            // Toggle lighting and materials based on backgroundIndex
+            if (index === 1) {
+                // Add point lights for ASCII effect
+                if (!pointLight1) {
+                    pointLight1 = new THREE.PointLight(0xffffff, 3, 0, 0);
+                    pointLight1.position.set(500, 500, 500);
+                    scene.add(pointLight1);
+                }
+                if (!pointLight2) {
+                    pointLight2 = new THREE.PointLight(0xffffff, 1, 0, 0);
+                    pointLight2.position.set(-500, -500, -500);
+                    scene.add(pointLight2);
+                }
+                // Switch to MeshPhongMaterial for ASCII effect
+                cards.forEach(card => {
+                    card.material = card.userData.project.materialPhong;
+                });
+                sphere.material = sphereMaterialPhong;
+                skybox.material = skyboxMaterialBasic;
+                // Hide birds
+                birds.forEach(bird => bird.visible = false);
+            } else if (index === 2) {
+                // Remove point lights for normal rendering
+                if (pointLight1) {
+                    scene.remove(pointLight1);
+                    pointLight1 = null;
+                }
+                if (pointLight2) {
+                    scene.remove(pointLight2);
+                    pointLight2 = null;
+                }
+                // Switch back to MeshBasicMaterial for normal rendering
+                cards.forEach(card => {
+                    card.material = card.userData.project.materialBasic;
+                });
+                sphere.material = sphereMaterialBasic;
+                skybox.material = skyboxMaterialBasic;
+                // Show birds for backgroundIndex === 2
+                birds.forEach(bird => bird.visible = true);
+            } else {
+                // Remove point lights for normal rendering
+                if (pointLight1) {
+                    scene.remove(pointLight1);
+                    pointLight1 = null;
+                }
+                if (pointLight2) {
+                    scene.remove(pointLight2);
+                    pointLight2 = null;
+                }
+                // Switch back to MeshBasicMaterial for normal rendering
+                cards.forEach(card => {
+                    card.material = card.userData.project.materialBasic;
+                });
+                sphere.material = sphereMaterialBasic;
+                skybox.material = skyboxMaterialBasic;
+                // Hide birds
+                birds.forEach(bird => bird.visible = false);
+            }
         }
 
         function initializeScene() {
-            cards.forEach((card, index) => {
-                const angle = (index / cardCount) * Math.PI * 2 - Math.PI / 2;
-                card.position.set(radius * Math.cos(angle), -3, radius * Math.sin(angle));
-                card.lookAt(0, -5, 0);
-                card.rotation.x = -Math.PI / 12;
-            });
-
-            // Create a skybox sphere (large sphere around the scene)
-            const skyboxRadius = 500; // Large enough to encompass the scene
+            const skyboxRadius = 500;
             const skyboxGeometry = new THREE.SphereGeometry(skyboxRadius, 32, 32);
-            const skyboxMaterial = new THREE.MeshBasicMaterial({
-                side: THREE.BackSide, // Render on the inside of the sphere
+            skyboxMaterialBasic = new THREE.MeshBasicMaterial({
+                side: THREE.BackSide,
                 transparent: true,
                 opacity: 1
             });
-            skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterial);
-            // Rotate the skybox to align the horizon with the camera's view
-            skybox.rotation.x = Math.PI / -3.5; // Align horizon
-            skybox.rotation.y = Math.PI / -7; // Initial Y rotation
-            skybox.userData = { rotationSpeed: 0.001 }; // Add rotation speed for skybox
+            skyboxMaterialPhong = new THREE.MeshPhongMaterial({
+                side: THREE.BackSide,
+                transparent: true,
+                opacity: 1,
+                flatShading: true
+            });
+            skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterialBasic);
+            skybox.rotation.x = Math.PI / -3.5;
+            skybox.rotation.y = Math.PI / -7;
+            skybox.userData = { rotationSpeed: 0.001 };
             scene.add(skybox);
             console.log("Skybox added to scene with initial rotation:", skybox.rotation.x, skybox.rotation.y);
-
-            // Initially apply the solid color background
-            applyBackground(0);
 
             const sphereRadius = 1.5;
             const sphereGeometry = new THREE.SphereGeometry(sphereRadius, 32, 32);
@@ -291,14 +460,24 @@ document.addEventListener("DOMContentLoaded", () => {
             texture.minFilter = THREE.LinearMipmapLinearFilter;
             texture.magFilter = THREE.NearestFilter;
             texture.needsUpdate = true;
-            const sphereMaterial = new THREE.MeshBasicMaterial({ map: texture });
+            sphereMaterialBasic = new THREE.MeshBasicMaterial({ map: texture });
+            sphereMaterialPhong = new THREE.MeshPhongMaterial({ map: texture, flatShading: true });
 
-            sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+            sphere = new THREE.Mesh(sphereGeometry, sphereMaterialBasic);
             sphere.position.set(0, -6.2, 0);
             scene.add(sphere);
             console.log("WebGL sphere with single texture added at position:", sphere.position);
 
             sphere.userData = { rotationSpeed: 0.005 };
+
+            cards.forEach((card, index) => {
+                const angle = (index / cardCount) * Math.PI * 2 - Math.PI / 2;
+                card.position.set(radius * Math.cos(angle), -3, radius * Math.sin(angle));
+                card.lookAt(0, -5, 0);
+                card.rotation.x = -Math.PI / 12;
+            });
+
+            applyBackground(0);
 
             const ambientLight = new THREE.AmbientLight(0x404040);
             scene.add(ambientLight);
@@ -316,6 +495,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (controls) controls.update();
             renderer.render(scene, camera);
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                asciiShaderMaterial.uniforms.resolution.value.set(window.innerWidth, window.innerHeight);
+                renderTarget.setSize(window.innerWidth, window.innerHeight);
+                renderer.render(scene, camera);
+            });
 
             function animate() {
                 requestAnimationFrame(animate);
@@ -338,15 +526,36 @@ document.addEventListener("DOMContentLoaded", () => {
                     card.rotation.x += 0.0001;
                 });
 
-                // Rotate the central sphere
                 sphere.rotation.x += sphere.userData.rotationSpeed;
                 sphere.rotation.y += sphere.userData.rotationSpeed;
 
-                // Rotate the skybox slowly around the Y-axis
                 skybox.rotation.y += skybox.userData.rotationSpeed;
 
+                // Animate birds when backgroundIndex === 2
+                if (backgroundIndex === 2) {
+                    birds.forEach(bird => {
+                        bird.userData.angle -= bird.userData.speed; // Move counterclockwise
+                        const x = bird.userData.distance * Math.cos(bird.userData.angle);
+                        const z = bird.userData.distance * Math.sin(bird.userData.angle);
+                        bird.position.set(x, -6.2 + bird.userData.height, z);
+                        // Make the bird face its direction of movement (adjusted for counterclockwise motion)
+                        bird.lookAt(x + Math.cos(bird.userData.angle - Math.PI / 2), -6.2 + bird.userData.height, z + Math.sin(bird.userData.angle - Math.PI / 2));
+                    });
+                }
+
                 if (controls) controls.update();
-                renderer.render(scene, camera);
+
+                if (backgroundIndex === 1) {
+                    renderer.setRenderTarget(renderTarget);
+                    renderer.clear();
+                    renderer.render(scene, camera);
+                    renderer.setRenderTarget(null);
+                    renderer.clear();
+                    renderer.render(asciiScene, asciiCamera);
+                } else {
+                    renderer.clear();
+                    renderer.render(scene, camera);
+                }
             }
             animate();
 
@@ -378,7 +587,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 mouse.y = -(event.clientY / initialHeight) * 2 + 1;
                 raycaster.setFromCamera(mouse, camera);
 
-                // Check for sphere hover first
                 const sphereIntersects = raycaster.intersectObject(sphere);
                 if (sphereIntersects.length > 0) {
                     console.log("Hovering over sphere");
@@ -386,7 +594,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
 
-                // Check for card hover
                 const cardIntersects = raycaster.intersectObjects(cards);
                 if (cardIntersects.length > 0) {
                     const card = cardIntersects[0].object;
@@ -428,17 +635,20 @@ document.addEventListener("DOMContentLoaded", () => {
                 mouse.y = -(clientY / initialHeight) * 2 + 1;
                 raycaster.setFromCamera(mouse, camera);
 
-                // Check for sphere click first
                 const sphereIntersects = raycaster.intersectObject(sphere);
                 if (sphereIntersects.length > 0) {
                     console.log("Sphere clicked, cycling background...");
                     backgroundIndex = (backgroundIndex + 1) % backgroundPaths.length;
                     applyBackground(backgroundIndex);
+                    if (backgroundIndex === 1) {
+                        console.log("ASCII-like effect enabled for background index 1.");
+                    } else {
+                        console.log("ASCII-like effect disabled for background index:", backgroundIndex);
+                    }
                     renderer.render(scene, camera);
                     return;
                 }
 
-                // Check for card clicks
                 const cardIntersects = raycaster.intersectObjects(cards);
                 console.log("Raycaster intersects on click/touch:", cardIntersects.length, cardIntersects);
 
@@ -493,7 +703,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
 
-            // Stop clicks on contact buttons from bubbling up to the carousel
             document.getElementById('contactbutton')?.addEventListener('click', (event) => {
                 event.stopPropagation();
                 console.log("Click on contactbutton stopped propagation.");
@@ -504,7 +713,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.log("Click on mobilecontactbutton stopped propagation.");
             });
 
-            // Stop clicks on the form from bubbling up to the carousel
             document.getElementById('form')?.addEventListener('click', (event) => {
                 event.stopPropagation();
                 console.log("Click on form stopped propagation.");
