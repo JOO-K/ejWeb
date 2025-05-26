@@ -413,10 +413,8 @@ document.addEventListener("DOMContentLoaded", () => {
             label.style.position = 'absolute';
             label.style.color = '#00ff00';
             label.style.fontFamily = 'monospace';
-            label.style.fontSize = '12px';
-            label.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-            label.style.padding = '2px 5px';
-            label.style.border = '1px solid #00ff00';
+            label.style.fontSize = isMobile ? '4px' : '12px'; // On mobile: 12px / 3 = 4px
+            // Removed backgroundColor and border to get rid of the "box"
             label.style.display = 'none !important';
             label.style.opacity = '1 !important';
             label.style.visibility = 'visible !important';
@@ -515,7 +513,7 @@ document.addEventListener("DOMContentLoaded", () => {
         rotationLabel.style.position = 'absolute';
         rotationLabel.style.color = '#00ff00';
         rotationLabel.style.fontFamily = 'monospace';
-        rotationLabel.style.fontSize = '12px';
+        rotationLabel.style.fontSize = isMobile ? '4px' : '12px'; // On mobile: 12px / 3 = 4px
         rotationLabel.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
         rotationLabel.style.padding = '2px 5px';
         rotationLabel.style.border = '1px solid #00ff00';
