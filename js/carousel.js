@@ -141,10 +141,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         function updateCameraSettings() {
             if (isMobile) {
-                initialZ = 13;
-                targetZ = -.5;
-                cameraY = 10;
-                controlsTargetY = 4;
+                initialZ = 6; // Start farther to allow zoom-in
+                targetZ = 8; // Adjusted for 35-degree angle
+                cameraY = 1; // Increased height for better top-down view
+                controlsTargetY = -3; // Look at the midpoint of the scene (sphere at y=-6.2, cards at y=-3)
             } else {
                 initialZ = 8;
                 targetZ = 3;
@@ -155,7 +155,7 @@ document.addEventListener("DOMContentLoaded", () => {
             currentZ = initialZ;
             camera.position.set(0, cameraY, initialZ);
             camera.rotation.order = 'YXZ';
-            camera.rotation.set(-Math.PI / 6, 0, 0);
+            camera.rotation.set(-(Math.PI / 180 * 35), 0, 0); // 35-degree downward tilt for both mobile and desktop
 
             if (controls) {
                 controls.target.set(0, controlsTargetY, 0);
@@ -174,12 +174,14 @@ document.addEventListener("DOMContentLoaded", () => {
             { id: "project3", image: "./images/cube3.png", title: "Title Example", desc: "SubText", url: "./html/project3.html" },
             { id: "project4", image: "./images/cube4.png", title: "Title Example", desc: "SubText", url: "./html/project4.html" },
             { id: "project5", image: "./images/cube5.png", title: "Title Example", desc: "SubText", url: "./html/project5.html" },
-            { id: "project6", image: "./images/cube6.png", title: "Title Example", desc: "SubText", url: "./html/project6.html" }
+            { id: "project6", image: "./images/cube6.png", title: "Title Example", desc: "SubText", url: "./html/project6.html" },
+            { id: "reserach1", image: "./images/cube6.png", title: "Project 7 Placeholder", desc: "SubText 7", url: "./html/researchproj.html" },
+            { id: "research2", image: "./images/cube6.png", title: "Project 8 Placeholder", desc: "SubText 8", url: "./html/researchproj.html" }
         ];
 
         const cards = [];
         const radius = 3.2;
-        const cardCount = 6;
+        const cardCount = 8;
 
         let loadedTextures = 0;
         const totalTextures = projects.length;
@@ -266,6 +268,24 @@ document.addEventListener("DOMContentLoaded", () => {
             card.position.set(0, 0, 0);
             card.lookAt(0, -5, 0);
             card.userData = { project };
+
+            // Create an HTML element for the card's coordinates
+            const label = document.createElement('div');
+            label.className = 'card-coord-label card-label-' + index; // Unique class for specificity
+            label.style.position = 'absolute';
+            label.style.color = '#00ff00'; // Same green color as bird labels
+            label.style.fontFamily = 'monospace';
+            label.style.fontSize = isMobile ? '4px' : '12px'; // Match bird label size
+            label.style.display = 'none !important'; // Initially hidden
+            label.style.opacity = '1 !important';
+            label.style.visibility = 'visible !important';
+            label.style.zIndex = '500'; // Inline zIndex: above canvas (1), below project containers (1009)
+            label.style.textAlign = 'center';
+            label.style.pointerEvents = 'none'; // Prevent interaction
+            label.textContent = `Card ${index} Pos: (0.0, 0.0, 0.0)`;
+            document.body.appendChild(label);
+            card.userData.label = label;
+
             scene.add(card);
             cards.push(card);
         });
@@ -303,7 +323,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } else if (path) {
                 const texture = new THREE.TextureLoader().load(
                     path,
-                    () => {},
+                    () => { },
                     undefined,
                     (err) => console.error(`Failed to load background texture ${index}: ${path}`, err)
                 );
@@ -312,9 +332,9 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        // Create Birds for backgroundIndex === 1 and 2 using Primitive Geometries (Enhanced Inverted W shape with bird-like features)
+        // Create Birds for backgroundIndex === 0, 1, and 2 using Primitive Geometries (Enhanced Inverted W shape with bird-like features)
         const birds = [];
-        const birdCount = 10; // Reduced from 50 to 10 for better performance
+        const birdCount = 20;
 
         // Create the bird body (excluding the beak) using ShapeGeometry
         function createBirdBody() {
@@ -454,6 +474,104 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
+        // Create Circular Particle Grid with Concentric Rings
+        const maxParticles = 800; // Maximum number of particles to handle multiple rings
+        const particlesPerRing = 50; // Number of particles per ring
+        const maxRadius = 30; // Maximum radius of the rings
+        const ringInterval = 30; // Frames between ring spawns (1 second at 60 FPS)
+        const particlesGeometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(maxParticles * 3);
+        const velocities = new Float32Array(maxParticles * 3); // For radiating motion
+        const opacities = new Float32Array(maxParticles); // For fading effect
+        const active = new Float32Array(maxParticles); // 1 if particle is active, 0 if not
+
+        // Initialize all particles as inactive
+        for (let i = 0; i < maxParticles; i++) {
+            positions[i * 3] = 0;
+            positions[i * 3 + 1] = 0;
+            positions[i * 3 + 2] = 0;
+            velocities[i * 3] = 0;
+            velocities[i * 3 + 1] = 0;
+            velocities[i * 3 + 2] = 0;
+            opacities[i] = 0;
+            active[i] = 0;
+        }
+
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        particlesGeometry.setAttribute('velocity', new THREE.BufferAttribute(velocities, 3));
+        particlesGeometry.setAttribute('opacity', new THREE.BufferAttribute(opacities, 1));
+        particlesGeometry.setAttribute('active', new THREE.BufferAttribute(active, 1));
+
+        const particlesMaterial = new THREE.PointsMaterial({
+            color: 0x000000, // Black for default scene
+            size: 0.02,
+            sizeAttenuation: true,
+            transparent: true,
+            opacity: .5,
+            vertexColors: false
+        });
+        const wireframeMaterial = new THREE.PointsMaterial({
+            color: 0x00ff00, // Green for wireframe scene
+            size: 0.03,
+            sizeAttenuation: true,
+            transparent: true,
+            opacity: 1,
+            vertexColors: false
+        });
+        const phongMaterial = new THREE.PointsMaterial({
+            color: 0x000000, // Black for ASCII scene
+            size: 0.02,
+            sizeAttenuation: true,
+            transparent: true,
+            opacity: 1,
+            vertexColors: false
+        });
+
+        const particles = new THREE.Points(particlesGeometry, particlesMaterial);
+        particles.userData = {
+            wireframeMaterial: wireframeMaterial,
+            phongMaterial: phongMaterial
+        };
+
+        // Position the particle system behind the carousel sphere and cards
+        particles.position.set(0, isMobile ? -12.5 : -15, -5); // z = -5 to be behind all elements, y adjusted for device
+        particles.visible = false; // Initially hidden
+        scene.add(particles);
+
+        let spawnTimer = 0; // Timer for spawning new rings
+        let nextParticleIndex = 0; // Index to assign to the next particle
+
+        // Function to spawn a new ring
+        function spawnRing() {
+            const angleStep = (2 * Math.PI) / particlesPerRing;
+            for (let i = 0; i < particlesPerRing; i++) {
+                if (nextParticleIndex >= maxParticles) nextParticleIndex = 0; // Wrap around if we exceed max particles
+
+                const angle = i * angleStep + (Math.random() - 0.5) * 0.3; // Add irregularity to angle
+                const radiusOffset = 0.5 + (Math.random() - 0.5) * 0.2; // Ensure particles spawn away from center
+                const x = radiusOffset * Math.cos(angle);
+                const y = radiusOffset * Math.sin(angle);
+                const z = 0;
+
+                // Set position
+                positions[nextParticleIndex * 3] = x;
+                positions[nextParticleIndex * 3 + 1] = y;
+                positions[nextParticleIndex * 3 + 2] = z;
+
+                // Set velocity for outward motion
+                const speed = 0.05; // Speed of expansion
+                velocities[nextParticleIndex * 3] = speed * Math.cos(angle);
+                velocities[nextParticleIndex * 3 + 1] = speed * Math.sin(angle);
+                velocities[nextParticleIndex * 3 + 2] = 0;
+
+                // Set opacity and active state
+                opacities[nextParticleIndex] = 1;
+                active[nextParticleIndex] = 1;
+
+                nextParticleIndex++;
+            }
+        }
+
         // Create a test label to confirm DOM rendering
         const testLabel = document.createElement('div');
         testLabel.className = 'test-label';
@@ -472,40 +590,6 @@ document.addEventListener("DOMContentLoaded", () => {
         testLabel.style.opacity = '1 !important';
         testLabel.textContent = 'Test Label';
         document.body.appendChild(testLabel);
-
-        // Create Asteroids for backgroundIndex === 1 (wireframe scene)
-        const asteroids = [];
-        const asteroidCount = 20;
-
-        function createAsteroid() {
-            const geometry = new THREE.IcosahedronGeometry(0.5, 0); // Simple rocky shape
-            const material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
-            const asteroid = new THREE.Mesh(geometry, material);
-            const angle = Math.random() * Math.PI * 2;
-            const distance = 5 + Math.random() * 3; // Distance between 5 and 8 units
-            const height = -6.2 + (Math.random() * 4 - 2); // Height between -8.2 and -4.2
-            asteroid.position.set(
-                distance * Math.cos(angle),
-                height,
-                distance * Math.sin(angle)
-            );
-            asteroid.userData = {
-                angle: angle,
-                speed: 0.005 + Math.random() * 0.005,
-                rotationSpeed: new THREE.Vector3(
-                    Math.random() * 0.02 - 0.01,
-                    Math.random() * 0.02 - 0.01,
-                    Math.random() * 0.02 - 0.01
-                )
-            };
-            asteroid.visible = false;
-            scene.add(asteroid);
-            asteroids.push(asteroid);
-        }
-
-        for (let i = 0; i < asteroidCount; i++) {
-            createAsteroid();
-        }
 
         // Create an HTML element for sphere and skybox rotation values
         const rotationLabel = document.createElement('div');
@@ -539,6 +623,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
 
+            cards.forEach(card => {
+                if (card.userData.label) {
+                    card.userData.label.style.setProperty('display', 'none', 'important');
+                    card.userData.label.style.setProperty('visibility', 'hidden', 'important');
+                    card.userData.label.style.setProperty('opacity', '0', 'important');
+                }
+            });
+
             testLabel.style.setProperty('display', 'none', 'important');
             testLabel.style.setProperty('visibility', 'hidden', 'important');
             testLabel.style.setProperty('opacity', '0', 'important');
@@ -553,6 +645,14 @@ document.addEventListener("DOMContentLoaded", () => {
             birds.forEach(bird => {
                 if (bird.userData.label) {
                     bird.userData.label.style.setProperty('display', 'block', 'important');
+                    bird.userData.label.style.setProperty('visibility', 'visible', 'important');
+                    bird.userData.label.style.setProperty('opacity', '1', 'important');
+                }
+            });
+
+            cards.forEach(card => {
+                if (card.userData.label) {
+                    card.userData.label.style.setProperty('display', 'block', 'important');
                     bird.userData.label.style.setProperty('visibility', 'visible', 'important');
                     bird.userData.label.style.setProperty('opacity', '1', 'important');
                 }
@@ -589,7 +689,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
                 sphere.material = sphereMaterialWireframe;
                 skybox.material = skyboxMaterialWireframe;
-                // Show birds and asteroids, apply wireframe to birds
+                // Show birds and particles, apply wireframe materials
                 birds.forEach(bird => {
                     bird.visible = true;
                     bird.children.forEach(child => {
@@ -601,8 +701,14 @@ document.addEventListener("DOMContentLoaded", () => {
                         bird.userData.label.style.setProperty('opacity', '1', 'important');
                     }
                 });
-                asteroids.forEach(asteroid => {
-                    asteroid.visible = true;
+                particles.visible = true;
+                particles.material = particles.userData.wireframeMaterial; // Green particles for wireframe scene
+                cards.forEach(card => {
+                    if (card.userData.label) {
+                        card.userData.label.style.setProperty('display', 'block', 'important');
+                        card.userData.label.style.setProperty('visibility', 'visible', 'important');
+                        card.userData.label.style.setProperty('opacity', '1', 'important');
+                    }
                 });
                 // Show the rotation label
                 rotationLabel.style.setProperty('display', 'block', 'important');
@@ -632,7 +738,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
                 sphere.material = sphereMaterialPhong;
                 skybox.material = skyboxMaterialBasic;
-                // Show birds (non-wireframed), hide asteroids
+                // Show birds and particles (non-wireframed)
                 birds.forEach(bird => {
                     bird.visible = true;
                     bird.children.forEach(child => {
@@ -644,9 +750,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         child.userData.wireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true, side: THREE.DoubleSide });
                     });
                 });
-                asteroids.forEach(asteroid => {
-                    asteroid.visible = false;
-                });
+                particles.visible = true;
+                particles.material = particles.userData.phongMaterial; // Black particles for ASCII scene
                 // Hide all labels
                 hideAllLabels("ASCII scene");
                 // Set background color to light grey
@@ -667,10 +772,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
                 sphere.material = sphereMaterialBasic;
                 skybox.material = skyboxMaterialBasic;
-                // Hide birds and asteroids
+                // Show birds and particles (non-wireframed)
                 birds.forEach(bird => {
-                    bird.visible = false;
-                    // Reset bird materials to non-wireframe
+                    bird.visible = true;
                     bird.children.forEach(child => {
                         if (child === bird.children[0]) { // Body
                             child.material = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
@@ -680,8 +784,14 @@ document.addEventListener("DOMContentLoaded", () => {
                         child.userData.wireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true, side: THREE.DoubleSide });
                     });
                 });
-                asteroids.forEach(asteroid => {
-                    asteroid.visible = false;
+                particles.visible = true;
+                particles.material = new THREE.PointsMaterial({
+                    color: 0x000000, // Black particles for default scene
+                    size: 0.05,
+                    sizeAttenuation: true,
+                    transparent: true,
+                    opacity: 1,
+                    vertexColors: false
                 });
                 // Hide all labels
                 hideAllLabels("default scene");
@@ -723,7 +833,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const textureUrl = './images/cube1.png';
             const texture = new THREE.TextureLoader().load(
                 textureUrl,
-                () => {},
+                () => { },
                 undefined,
                 (err) => {
                     console.error(`Failed to load sphere texture: ${textureUrl}`, err);
@@ -803,8 +913,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 skybox.rotation.y += skybox.userData.rotationSpeed;
 
-                // Animate birds when backgroundIndex === 1 or 2
-                if (backgroundIndex === 1 || backgroundIndex === 2) {
+                // Animate birds when backgroundIndex === 0, 1, or 2
+                if (backgroundIndex === 0 || backgroundIndex === 1 || backgroundIndex === 2) {
                     birds.forEach(bird => {
                         // Circling motion
                         bird.userData.angle -= bird.userData.speed;
@@ -818,14 +928,60 @@ document.addEventListener("DOMContentLoaded", () => {
                         const flap = Math.sin(bird.userData.flapAngle) * 0.2; // Simulate wing flapping
                         bird.rotation.x = flap; // Rotate the bird to simulate flapping
                     });
+
+                    // Animate particles
+                    spawnTimer++;
+                    if (spawnTimer >= ringInterval) {
+                        spawnTimer = 0;
+                        spawnRing();
+                    }
+
+                    const positions = particles.geometry.attributes.position.array;
+                    const velocities = particles.geometry.attributes.velocity.array;
+                    const opacities = particles.geometry.attributes.opacity.array;
+                    const active = particles.geometry.attributes.active.array;
+
+                    for (let i = 0; i < maxParticles; i++) {
+                        if (active[i] === 0) continue; // Skip inactive particles
+
+                        // Update position
+                        positions[i * 3] += velocities[i * 3];
+                        positions[i * 3 + 1] += velocities[i * 3 + 1];
+                        positions[i * 3 + 2] += velocities[i * 3 + 2];
+
+                        // Calculate distance from center
+                        const x = positions[i * 3];
+                        const y = positions[i * 3 + 1];
+                        const distance = Math.sqrt(x * x + y * y);
+
+                        // Update opacity based on distance (fade out as it expands)
+                        opacities[i] = 1 - (distance / maxRadius);
+                        if (opacities[i] < 0) opacities[i] = 0;
+
+                        // Deactivate particle if it reaches max radius
+                        if (distance > maxRadius) {
+                            active[i] = 0;
+                            positions[i * 3] = 1000; // Move far away to prevent rendering
+                            positions[i * 3 + 1] = 1000;
+                            positions[i * 3 + 2] = 1000;
+                            velocities[i * 3] = 0;
+                            velocities[i * 3 + 1] = 0;
+                            velocities[i * 3 + 2] = 0;
+                            opacities[i] = 0;
+                        }
+                    }
+
+                    particles.geometry.attributes.position.needsUpdate = true;
+                    particles.geometry.attributes.opacity.needsUpdate = true;
+                    particles.geometry.attributes.active.needsUpdate = true;
                 }
 
                 // Check if a project page is open
-                const isProjectOpen = $(".project-container").filter(function() {
+                const isProjectOpen = $(".project-container").filter(function () {
                     return $(this).css("display") !== "none";
                 }).length > 0;
 
-                // Update HTML labels with sphere/skybox rotations and bird coordinates (only in wireframe scene)
+                // Update HTML labels with sphere/skybox rotations, bird coordinates, and card coordinates (only in wireframe scene)
                 if (backgroundIndex === 1 && !isProjectOpen) {
                     frameCounter++;
                     // Update sphere and skybox rotation label every 10 frames
@@ -850,8 +1006,12 @@ document.addEventListener("DOMContentLoaded", () => {
                                 const vector = bird.position.clone();
                                 vector.y += 0.2; // Slight offset above the bird
                                 vector.project(camera);
-                                const xScreen = (vector.x * 0.5 + 0.5) * window.innerWidth;
-                                const yScreen = (-vector.y * 0.5 + 0.5) * window.innerHeight;
+                                let xScreen = (vector.x * 0.5 + 0.5) * window.innerWidth;
+                                let yScreen = (-vector.y * 0.5 + 0.5) * window.innerHeight;
+
+                                // Clamp screen coordinates to keep labels on-screen
+                                xScreen = Math.max(10, Math.min(xScreen, window.innerWidth - 100)); // Adjust 100 based on label width
+                                yScreen = Math.max(10, Math.min(yScreen, window.innerHeight - 20)); // Adjust 20 based on label height
 
                                 // Update label text and position
                                 bird.userData.label.textContent = `Bird ${index} Pos: (${bird.position.x.toFixed(1)}, ${bird.position.y.toFixed(1)}, ${bird.position.z.toFixed(1)})`;
@@ -860,18 +1020,29 @@ document.addEventListener("DOMContentLoaded", () => {
                             }
                         }
                     });
-                }
 
-                // Animate asteroids when backgroundIndex === 1 (wireframe scene)
-                if (backgroundIndex === 1) {
-                    asteroids.forEach(asteroid => {
-                        asteroid.userData.angle += asteroid.userData.speed;
-                        const x = asteroid.userData.distance * Math.cos(asteroid.userData.angle);
-                        const z = asteroid.userData.distance * Math.sin(asteroid.userData.angle);
-                        asteroid.position.set(x, asteroid.position.y, z);
-                        asteroid.rotation.x += asteroid.userData.rotationSpeed.x;
-                        asteroid.rotation.y += asteroid.userData.rotationSpeed.y;
-                        asteroid.rotation.z += asteroid.userData.rotationSpeed.z;
+                    // Update card coordinate labels every frame to reduce jitter
+                    cards.forEach((card, index) => {
+                        if (card.visible && card.userData.label) {
+                            const computedStyle = window.getComputedStyle(card.userData.label);
+                            if (computedStyle.display !== 'none') {
+                                // Project card position to screen space
+                                const vector = card.position.clone();
+                                vector.y -= 1.7; // Position at the bottom of the card (card height is 3, so -1.5 - 0.2 for spacing)
+                                vector.project(camera);
+                                let xScreen = (vector.x * 0.5 + 0.5) * window.innerWidth;
+                                let yScreen = (-vector.y * 0.5 + 0.5) * window.innerHeight;
+
+                                // Clamp screen coordinates to keep labels on-screen
+                                xScreen = Math.max(10, Math.min(xScreen, window.innerWidth - 100)); // Adjust 1based on label width
+                                yScreen = Math.max(10, Math.min(yScreen, window.innerHeight - 20)); // Adjust 20 based on label height
+
+                                // Update label text and position
+                                card.userData.label.textContent = `Card ${index} Pos: (${card.position.x.toFixed(1)}, ${card.position.y.toFixed(1)}, ${card.position.z.toFixed(1)})`;
+                                card.userData.label.style.left = `${xScreen + 10}px`; // Offset to the right to avoid overlap
+                                card.userData.label.style.top = `${yScreen}px`;
+                            }
+                        }
                     });
                 }
 

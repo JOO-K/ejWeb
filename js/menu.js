@@ -193,6 +193,70 @@ $(document).ready(function () {
             console.log("Scrolled to top.");
         });
 
+        // Project home button click handler to return to homepage (using event delegation)
+        $(document).on("click", "#project-home", function (event) {
+            event.stopPropagation(); // Prevent click from bubbling to carousel.js
+            console.log("Project home button clicked. Navigating back to homepage.");
+
+            const $menu = $("#menu");
+            const $menu2 = $("#menu2");
+            const $aboutwrapper = $("#about-wrapper");
+            const $hpgraphic = $("#hp-graphic");
+            const $form = $("#form");
+
+            // Hide all project containers, menus, and about wrapper
+            $(".project-container").css("display", "none");
+            console.log("Hid all project containers.");
+
+            $menu.css("display", "none");
+            $menu2.css("display", "none");
+            console.log("Closed workarchive and researcharchive menus.");
+
+            if ($aboutwrapper.length) {
+                $aboutwrapper.css("display", "none");
+                console.log("Closed about wrapper.");
+            }
+
+            // Close the form if open
+            if ($form.length) {
+                $form.css("display", "none");
+                console.log("Closed form.");
+            }
+
+            // Show the homepage graphic
+            if ($hpgraphic.length) {
+                $hpgraphic.css("display", "flex");
+                console.log("Restored homepage graphic to display: flex");
+            } else {
+                console.warn("Homepage graphic not found.");
+            }
+
+            // Re-enable carousel canvas clicks
+            const canvas = document.getElementById("carouselCanvas");
+            if (canvas) {
+                canvas.style.pointerEvents = "auto";
+                console.log("Re-enabled carousel canvas pointer events.");
+            } else {
+                console.warn("Carousel canvas not found.");
+            }
+
+            // Reset toggle colors to black
+            $("#mainToggle, #researchToggle, #aboutToggle").css("color", "black");
+            console.log("Reset all toggle colors to black.");
+
+            // Scroll to the top of the page
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            console.log("Scrolled to top.");
+
+            // Ensure labels are hidden when returning to homepage
+            if (typeof window.hideAllLabels === "function") {
+                window.hideAllLabels("project home button click");
+                console.log("Hid all labels via hideAllLabels.");
+            } else {
+                console.warn("hideAllLabels function not found. Labels may not be hidden.");
+            }
+        });
+
         // Stop clicks within project containers from bubbling up to the carousel
         $(document).on("click", ".project-container", function (event) {
             event.stopPropagation();
